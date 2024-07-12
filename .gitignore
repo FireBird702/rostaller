@@ -1,0 +1,10 @@
+*.lock
+~$*
+node_modules
+bin
+
+Packages
+ServerPackages
+
+rostaller*
+*.project.json
