@@ -6,7 +6,7 @@ import { validateToml } from "./validator/validator.js"
 import { githubDeepDependency, githubDependency } from "./dependencies/githubDependency.js"
 import { githubBranchDeepDependency, githubBranchDependency } from "./dependencies/githubBranchDependency.js"
 import { wallyDeepDependency, wallyDependency } from "./dependencies/wallyDependency.js"
-import { cyan, yellow, green } from "./output/colors.js"
+import { cyan, green } from "./output/colors.js"
 import { debugLog } from "./output/output.js"
 import { Queue } from "async-await-queue"
 
@@ -56,14 +56,14 @@ async function downloadDependency(alias, dependencyLink, fileType, tree, parentD
  */
 export async function getManifestData(manifestFile, isRoot) {
 	if (!existsSync(manifestFile))
-		throw `${cyan(manifestFile)} ${yellow("does not exist")}`
+		throw `[${manifestFile}] does not exist`
 
 	debugLog("Loading", cyan(manifestFile))
 
-	var manifestData = validateToml(isRoot && "RootPackage" || "SubPackage", manifestFile, readFileSync(manifestFile))
+	var manifestData = validateToml(isRoot && "RootPackage" || "SubPackage", manifestFile, readFileSync(manifestFile).toString())
 
 	if (!manifestData)
-		throw `${cyan(manifestFile)} ${yellow("is invalid")}`
+		throw `[${manifestFile}] is invalid`
 
 	process.chdir(resolve(manifestFile, ".."))
 
@@ -103,7 +103,7 @@ export async function downloadManifestDependencies(manifestFile, tree, parentDep
 		fileType = "unknown"
 
 	if (fileType == "unknown")
-		throw `${cyan(manifestFile)} ${yellow("is not the correct manifest file")}`
+		throw `[${manifestFile}] is not the correct manifest file`
 
 	const queue = new Queue(config.MaxConcurrentDownloads)
 	const promises = []

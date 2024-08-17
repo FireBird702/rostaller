@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync, readdirSync, renameSync, readFileSync } from "fs"
+import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "fs"
 import { resolve } from "path"
 import extractZIP from "extract-zip"
 import { red, yellow, green, cyan } from "../output/colors.js"
@@ -7,6 +7,7 @@ import { getAsync } from "../httpGet.js"
 import { config, defaultProjectJsonName, downloadStats, manifestFileNames, getPackageFolderPath } from "../configs/mainConfig.js"
 import { debugLog } from "../output/output.js"
 import { rimraf } from "rimraf"
+import { renameFile } from "../renameFile.js"
 
 /**
  * @param {string} alias
@@ -80,7 +81,7 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 			mkdirSync(assetFolder, { recursive: true })
 
 			readdirSync(assetUnzip).forEach((dirNext) => {
-				renameSync(resolve(assetUnzip, dirNext), assetFile)
+				renameFile(resolve(assetUnzip, dirNext), assetFile)
 			})
 
 			await rimraf(assetZip)
@@ -116,14 +117,14 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 					if (content[key] == manifestFileNames.githubManifest) {
 						const packagePath = assetFile + `/${manifestFileNames.githubManifest}`
 
-						let packageFile = validateToml("SubPackage", packagePath, readFileSync(packagePath))
+						let packageFile = validateToml("SubPackage", packagePath, readFileSync(packagePath).toString())
 						tree[formatedDependencyLink].package.realm = packageFile.package.realm
 					}
 
 					if (content[key] == manifestFileNames.wallyManifest) {
 						const packagePath = assetFile + `/${manifestFileNames.wallyManifest}`
 
-						let packageFile = validateToml("SubPackage", packagePath, readFileSync(packagePath))
+						let packageFile = validateToml("SubPackage", packagePath, readFileSync(packagePath).toString())
 						tree[formatedDependencyLink].package.realm = packageFile.package.realm
 					}
 				}
@@ -135,7 +136,7 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 			}
 
 			if (!projectFile) {
-				throw `${manifestFileNames.githubManifest} is invalid`
+				throw `[${manifestFileNames.githubManifest}] is invalid`
 			}
 
 			// rename project name
@@ -155,8 +156,11 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 				if (!existsSync(assetPath))
 					mkdirSync(assetPath, { recursive: true })
 
-				renameSync(assetFolder, assetPath + `/${owner.toLowerCase()}_${repo.toLowerCase()}@${branch}`)
-				assetFolder = assetPath + `/${owner.toLowerCase()}_${repo.toLowerCase()}@${branch}`
+				const newPath = assetPath + `/${owner.toLowerCase()}_${repo.toLowerCase()}@${branch}`
+
+				renameFile(assetFolder, newPath)
+
+				assetFolder = newPath
 				assetFile = assetFolder + `/${repo.toLowerCase()}`
 			}
 

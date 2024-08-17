@@ -15,13 +15,13 @@ Download packages from [wally][wally], github releases and github branches (usef
 
 [Aftman][aftman] is the toolchain manager. You can use it to install rostaller:
 
-In your project (preferred)
+In your project
 
 ```bash
 aftman add FireBird702/rostaller
 ```
 
-Or install globally
+Or globally
 
 ```bash
 aftman add --global FireBird702/rostaller
@@ -55,7 +55,7 @@ Install all packages from specified project.json file.
 rostaller install --project-json [project.json]
 ```
 
-Install all packages from lock file.
+Install all packages from lock file and because of that you can commit package-lock.json file to your repository.
 
 ```sh
 rostaller install --lock
@@ -95,7 +95,7 @@ realm = "shared"
 # The value on the right will usually be:
 #   wally#[scope]/[name]@[semver_version] for wally packages.
 #
-#   github#[owner]/[repository]@[semver_version] or [owner]/[repository]@[semver_version] for github packages.
+#   github#[owner]/[repository]@[semver_version] for github packages. If no semver_version specified then latest tag will be choosen.
 #
 #   github-branch#[owner]/[repository]@[branch] for github branches when no releases are available.
 #

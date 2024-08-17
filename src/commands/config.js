@@ -6,7 +6,7 @@ export async function config(args) {
 	try {
 		await open(configPath, { wait: true })
 	} catch (err) {
-		console.error(red("Unable to open config file:"), yellow(err))
+		console.error(`${red("Unable to open config file:")} ${yellow(err)}`)
 		process.exit(1)
 	}
 }

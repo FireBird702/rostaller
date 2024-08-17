@@ -73,7 +73,7 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 
 		moduleData = `return require(${serverPackages}._Index["${fullName}"]["${shortName}"])\n`
 	} else {
-		throw yellow(`${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.realm}" realm cannot access ${packageAlias} (${fullName}) in "${packageData.realm}" realm`)
+		throw `${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.realm}" realm cannot access ${packageAlias} (${fullName}) in "${packageData.realm}" realm`
 	}
 
 	writeFileSync(`${getPackageFolderPath(realm)}/_Index/${parentPackageFullName}/${packageAlias}.luau`, moduleData)

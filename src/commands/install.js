@@ -1,5 +1,5 @@
 import { existsSync } from "fs"
-import { red, green, magenta, yellow, cyan } from "../output/colors.js"
+import { red, green, magenta, yellow } from "../output/colors.js"
 import { config, mainPath, downloadStats, sourcemapName, lockFileName, manifestFileNames, getPackageFolderPath } from "../configs/mainConfig.js"
 import { downloadManifestDependencies } from "../manifest.js"
 import { createLuauFiles } from "../luauFileCreator.js"
@@ -8,20 +8,21 @@ import { rootManifestConfig } from "../configs/rootManifestConfig.js"
 import { debugLog } from "../output/output.js"
 import { generateLockFile } from "../lockFileCreator.js"
 import { rimraf } from "rimraf"
+import { updateRootToml } from "../updateRootToml.js"
 
 export async function install(args) {
 	try {
 		if (!existsSync(`${mainPath}/${manifestFileNames.githubManifest}`))
-			throw `${cyan(manifestFileNames.githubManifest)} ${yellow("does not exist")}`
+			throw `[${manifestFileNames.githubManifest}] does not exist`
 
 		debugLog(magenta("Checking project.json file ...", true))
 		const PROJECT_JSON = args["project-json"] && args["project-json"].replace(/\\/g, "/")
 
 		if (!PROJECT_JSON) {
-			throw `${cyan("project.json")} ${yellow("is not specified")}`
+			throw `[project.json] is not specified`
 		}
 		if (!existsSync(`${mainPath}/${PROJECT_JSON}`)) {
-			throw `${cyan(PROJECT_JSON)} ${yellow("does not exist")}`
+			throw `[${PROJECT_JSON}] does not exist`
 		}
 
 		debugLog(magenta("Clearing package directories ...", true))
@@ -81,9 +82,15 @@ export async function install(args) {
 		debugLog(magenta(`Generating ${lockFileName} file ...`, true))
 		await generateLockFile(mapTree)
 
+		if (downloadStats.failed == 0) {
+			debugLog(magenta(`Updating root ${manifestFileNames.githubManifest} file ...`, true))
+			await updateRootToml(mapTree)
+		} else
+			debugLog(magenta(`Some packages failed to update, root ${manifestFileNames.githubManifest} file will not be updated ...`, true))
+
 		console.log(`[${green("INFO", true)}] Downloaded ${downloadStats.success} packages, ${downloadStats.failed} failed!`)
 	} catch (err) {
-		console.error(red(`Failed to install packages: ${err}`))
+		console.error(`${red(`Failed to install packages:`)} ${yellow(err)}`)
 		process.exit(1)
 	}
 }

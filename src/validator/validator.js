@@ -1,8 +1,8 @@
-import { parse } from "toml"
 import { yellow } from "../output/colors.js"
 import { fileError } from "../output/output.js"
 import { validate as validateRootPackage } from "./rootPackage.js"
 import { validate as validatePackage } from "./package.js"
+import { parse } from "@iarna/toml"
 
 /**
  * @param {string?} type
@@ -11,19 +11,19 @@ import { validate as validatePackage } from "./package.js"
  * @returns {Object | undefined}
  */
 export function validateJson(type, localPath, fileRead) {
-	let json;
+	let jsonData
 
 	try {
-		json = JSON.parse(fileRead)
+		jsonData = JSON.parse(fileRead)
 	} catch (err) {
 		console.error(fileError(localPath), yellow("Malformed JSON:"), yellow(err))
 	}
 
 	switch (type) {
 		case "Project":
-			return json
+			return jsonData
 		default:
-			return json
+			return jsonData
 	}
 }
 
@@ -34,20 +34,20 @@ export function validateJson(type, localPath, fileRead) {
  * @returns {Object | undefined}
  */
 export function validateToml(type, localPath, fileRead) {
-	let toml;
+	let tomlData
 
 	try {
-		toml = parse(fileRead)
+		tomlData = parse(fileRead)
 	} catch (err) {
 		console.error(fileError(localPath), yellow("Malformed TOML:"), yellow(err))
 	}
 
 	switch (type) {
 		case "RootPackage":
-			return validateRootPackage(toml)
+			return validateRootPackage(tomlData)
 		case "SubPackage":
-			return validatePackage(toml)
+			return validatePackage(tomlData)
 		default:
-			return toml
+			return tomlData
 	}
 }
