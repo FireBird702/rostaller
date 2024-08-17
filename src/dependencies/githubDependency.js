@@ -184,9 +184,11 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 			mkdirSync(assetFolder, { recursive: true })
 
-			readdirSync(assetUnzip).forEach((dirNext) => {
-				renameFile(resolve(assetUnzip, dirNext), assetFile)
-			})
+			const dirContent = readdirSync(assetUnzip)
+
+			for (const i in dirContent) {
+				await renameFile(resolve(assetUnzip, dirContent[i]), assetFile)
+			}
 
 			await rimraf(assetZip)
 			await rimraf(assetUnzip)
@@ -262,7 +264,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 				const newPath = assetPath + `/${owner.toLowerCase()}_${repo.toLowerCase()}@${packageVersion}`
 
-				renameFile(assetFolder, newPath)
+				await renameFile(assetFolder, newPath)
 
 				assetFolder = newPath
 				assetFile = assetFolder + `/${repo.toLowerCase()}`

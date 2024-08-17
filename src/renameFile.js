@@ -1,9 +1,9 @@
 import graceful_fs from "graceful-fs"
-import { loopWhile } from "deasync"
+import { setTimeout } from "timers/promises"
 
 const rename = graceful_fs.rename
 
-export function renameFile(oldPath, newPath) {
+export async function renameFile(oldPath, newPath) {
 	var completed = false
 
 	rename(oldPath, newPath, (err) => {
@@ -13,5 +13,6 @@ export function renameFile(oldPath, newPath) {
 		completed = true
 	})
 
-	loopWhile(() => { return !completed })
+	while (!completed)
+		await setTimeout(100)
 }
