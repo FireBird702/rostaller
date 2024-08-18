@@ -4,8 +4,8 @@
 	"bin": "./src/index.js",
 	"dependencies": {
 		"@iarna/toml": "^2.2.5",
+		"adm-zip": "^0.5.15",
 		"async-await-queue": "^2.1.4",
-		"extract-zip": "^2.0.1",
 		"follow-redirects": "^1.15.6",
 		"graceful-fs": "^4.2.11",
 		"npm": "^10.8.2",

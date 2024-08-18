@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "fs"
 import { resolve } from "path"
-import extractZIP from "extract-zip"
 import { red, yellow, green, cyan } from "../output/colors.js"
 import { validateJson } from "../validator/validator.js"
 import { getAsync } from "../httpGet.js"
@@ -8,6 +7,7 @@ import { config, defaultProjectJsonName, downloadStats, manifestFileNames, getPa
 import { debugLog } from "../output/output.js"
 import { clean, rcompare, maxSatisfying } from "semver"
 import { rimraf } from "rimraf"
+import AdmZip from "adm-zip"
 
 var metadataCache = {}
 
@@ -163,7 +163,8 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 
 			let assetFile = assetFolder + `/${repo.toLowerCase()}`
 
-			await extractZIP(assetZip, { dir: resolve(assetFile) })
+			var zip = new AdmZip(assetZip)
+			zip.extractAllTo(resolve(assetFile), true)
 
 			await rimraf(assetZip)
 

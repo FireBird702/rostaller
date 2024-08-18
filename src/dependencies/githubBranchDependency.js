@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "fs"
 import { resolve } from "path"
-import extractZIP from "extract-zip"
 import { red, yellow, green, cyan } from "../output/colors.js"
 import { validateJson, validateToml } from "../validator/validator.js"
 import { getAsync } from "../httpGet.js"
@@ -8,6 +7,7 @@ import { config, defaultProjectJsonName, downloadStats, manifestFileNames, getPa
 import { debugLog } from "../output/output.js"
 import { rimraf } from "rimraf"
 import { renameFile } from "../renameFile.js"
+import AdmZip from "adm-zip"
 
 /**
  * @param {string} alias
@@ -74,7 +74,8 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 			mkdirSync(assetUnzip, { recursive: true })
 			writeFileSync(assetZip, asset)
 
-			await extractZIP(assetZip, { dir: resolve(assetUnzip) })
+			var zip = new AdmZip(assetZip)
+			zip.extractAllTo(resolve(assetUnzip), true)
 
 			let assetFile = assetFolder + `/${repo.toLowerCase()}`
 
