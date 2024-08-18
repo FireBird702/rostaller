@@ -11,29 +11,23 @@ Download packages from [wally][wally], github releases and github branches (usef
 
 ## Installation
 
-### With Aftman (preferred)
+### With Rokit
 
-[Aftman][aftman] is the toolchain manager. You can use it to install rostaller:
+[Rokit][rokit] is the toolchain manager. You can use it to install rostaller:
 
 In your project
 
 ```bash
-aftman add FireBird702/rostaller
+rokit add FireBird702/rostaller
 ```
 
 Or globally
 
 ```bash
-aftman add --global FireBird702/rostaller
+rokit add --global FireBird702/rostaller
 ```
 
-[aftman]: https://github.com/LPGhatguy/aftman
-
-### From GitHub
-
-Pre-built binaries are available for Windows, macOS, and Linux from the [GitHub Releases Page][releases].
-
-[releases]: https://github.com/FireBird702/rostaller/releases
+[rokit]: https://github.com/rojo-rbx/rokit
 
 ## Commands
 

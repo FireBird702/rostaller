@@ -14,7 +14,8 @@ const config = {
 	WallyAccessToken: "",
 
 	GenerateSourcemapTool: "rojo",
-	WallyPackageTypesVersion: "JohnnyMorganz/wally-package-types", // can be set to a specific version
+
+	ManualWallyPackageTypesInstallation: false,
 }
 
 try {

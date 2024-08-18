@@ -48,16 +48,23 @@ export async function install(args) {
 		debugLog(magenta("Creating sourcemap file ...", true))
 		execSync(`${config.GenerateSourcemapTool} sourcemap ${PROJECT_JSON} --output ${sourcemapName}`, { stdio: stdio })
 
-		debugLog(magenta("Checking wally-package-types ...", true))
-		var typesFixerInstalled = true
+		if (!config.ManualWallyPackageTypesInstallation) {
+			debugLog(magenta("Checking wally-package-types ...", true))
+			var typesFixerInstalled = true
 
-		try {
-			execSync(`wally-package-types --version`, { stdio: "ignore" })
-		} catch (err) {
-			typesFixerInstalled = false
+			try {
+				execSync(`wally-package-types --version`, { stdio: "ignore" })
+			} catch (err) {
+				typesFixerInstalled = false
+			}
+
+			try {
+				execSync("rokit trust JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
+				execSync("rokit add --global JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
+			} catch (err) { }
+
+			execSync("rokit update --global JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
 		}
-
-		execSync(`aftman add --global ${config.WallyPackageTypesVersion}`, { stdio: (!typesFixerInstalled && "inherit") || stdio })
 
 		debugLog(magenta("Adding types to .luau files ...", true))
 
