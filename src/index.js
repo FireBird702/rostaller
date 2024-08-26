@@ -1,5 +1,4 @@
 import yargs from "yargs"
-import { defaultProjectJsonName } from "./configs/mainConfig.js"
 import { config } from "./commands/config.js"
 import { init } from "./commands/init.js"
 import { install } from "./commands/install.js"
@@ -46,17 +45,12 @@ yargs(args)
 			yargs
 				.boolean("lock")
 				.describe("lock", "get dependencies from the lock file")
-
-			yargs
-				.string("project-json")
-				.describe("project-json", "path to your .project.json file")
-				.default("project-json", defaultProjectJsonName)
 		},
 		async (args) => {
 			if (args.lock)
-				await installFromLock(args)
+				await installFromLock()
 			else
-				await install(args)
+				await install()
 		}
 	)
 

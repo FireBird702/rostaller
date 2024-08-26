@@ -37,16 +37,10 @@ Create a new, empty package.
 rostaller init
 ```
 
-Install all packages. Default project.json file is `default.project.json`.
+Install all packages.
 
 ```sh
 rostaller install
-```
-
-Install all packages from specified project.json file.
-
-```sh
-rostaller install --project-json [project.json]
 ```
 
 Install all packages from lock file and because of that you can commit package-lock.json file to your repository.

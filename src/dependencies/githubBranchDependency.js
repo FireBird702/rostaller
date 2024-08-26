@@ -149,7 +149,7 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 				debugLog("Renaming", cyan(projectPath))
 
 				projectFile.name = repo.toLowerCase()
-				writeFileSync(projectPath, JSON.stringify(projectFile, null, 2))
+				writeFileSync(projectPath, JSON.stringify(projectFile, null, "\t"))
 			}
 
 			// update realm

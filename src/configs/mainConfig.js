@@ -46,7 +46,9 @@ export const downloadStats = {
 	success: 0
 }
 
+export const projectJsonName = ".rostaller-temp.project.json"
 export const sourcemapName = ".rostallerSourcemap-temp.json"
+
 export const lockFileName = "rostaller-lock.json"
 
 export const manifestFileNames = {

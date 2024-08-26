@@ -1,7 +1,11 @@
-import { writeFileSync } from "fs"
-import { getPackageFolderPath, manifestFileNames } from "./configs/mainConfig.js"
+import { existsSync, writeFileSync } from "fs"
+import { config, getPackageFolderPath, mainPath, projectJsonName, sourcemapName } from "./configs/mainConfig.js"
 import { rootManifestConfig } from "./configs/rootManifestConfig.js"
-import { yellow } from "./output/colors.js"
+import { magenta, yellow } from "./output/colors.js"
+import { debugLog } from "./output/output.js"
+import { createProjectJsonFile } from "./createProjectJsonFile.js"
+import { execSync } from "child_process"
+import { rimraf } from "rimraf"
 
 /**
  * @param {string} realm
@@ -39,8 +43,7 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 			console.error(yellow(`
 			A server or dev dependency is depending on a shared dependency.
 			To link these packages correctly you must declare where shared
-			packages are placed in the roblox datamodel
-			(based on provided project.json file) in your ${manifestFileNames.githubManifest}.
+			packages are placed in the roblox datamodel.
 
 			This typically looks like:
 
@@ -59,8 +62,7 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 			console.error(yellow(`
 			A dev dependency is depending on a server dependency.
 			To link these packages correctly you must declare where server
-			packages are placed in the roblox datamodel
-			(based on provided project.json file) in your ${manifestFileNames.githubManifest}.
+			packages are placed in the roblox datamodel.
 
 			This typically looks like:
 
@@ -92,4 +94,58 @@ export async function createLuauFiles(map) {
 			await createLuauDependencyFile(packageMetadata.package.realm, packageMetadata.dependencies[dependencyPackageLink].alias, packageData, packageMetadata.alias, packageMetadata.package)
 		}
 	}
+
+	process.chdir(mainPath)
+
+	debugLog(magenta("Creating project.json file ...", true))
+	createProjectJsonFile(map)
+
+	var stdio
+
+	if (!config.Debug)
+		stdio = "ignore"
+
+	debugLog(magenta("Creating sourcemap file ...", true))
+	execSync(`${config.GenerateSourcemapTool} sourcemap ${projectJsonName} --output ${sourcemapName}`, { stdio: stdio })
+
+	if (!config.ManualWallyPackageTypesInstallation) {
+		debugLog(magenta("Checking wally-package-types ...", true))
+		var typesFixerInstalled = true
+
+		try {
+			execSync(`wally-package-types --version`, { stdio: "ignore" })
+		} catch (err) {
+			typesFixerInstalled = false
+		}
+
+		try {
+			execSync("rokit trust JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
+			execSync("rokit add --global JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
+		} catch (err) { }
+
+		execSync("rokit update --global JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
+	}
+
+	debugLog(magenta("Adding types to .luau files ...", true))
+
+	try {
+		if (existsSync(getPackageFolderPath("shared")))
+			execSync(`wally-package-types --sourcemap ${sourcemapName} ${rootManifestConfig.PackagesFolder}/`, { stdio: stdio })
+	} catch (err) { }
+
+	try {
+		if (existsSync(getPackageFolderPath("server")))
+			execSync(`wally-package-types --sourcemap ${sourcemapName} ${rootManifestConfig.ServerPackagesFolder}/`, { stdio: stdio })
+	} catch (err) { }
+
+	try {
+		if (existsSync(getPackageFolderPath("dev")))
+			execSync(`wally-package-types --sourcemap ${sourcemapName} ${rootManifestConfig.DevPackagesFolder}/`, { stdio: stdio })
+	} catch (err) { }
+
+	debugLog(magenta("Removing project.json file ...", true))
+	await rimraf(projectJsonName)
+
+	debugLog(magenta("Removing sourcemap file ...", true))
+	await rimraf(sourcemapName)
 }

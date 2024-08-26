@@ -180,7 +180,7 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 						debugLog("Renaming", cyan(projectPath))
 
 						defaultProjectFile.name = repo.toLowerCase()
-						writeFileSync(projectPath, JSON.stringify(defaultProjectFile, null, 2))
+						writeFileSync(projectPath, JSON.stringify(defaultProjectFile, null, "\t"))
 					}
 				}
 			}

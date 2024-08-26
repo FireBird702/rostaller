@@ -3,7 +3,7 @@ import { red, green, magenta, cyan, yellow } from "../output/colors.js"
 import { mainPath, manifestFileNames } from "../configs/mainConfig.js"
 import { debugLog } from "../output/output.js"
 
-export async function init(args) {
+export async function init() {
 	try {
 		const fileData = `
 		[package]
