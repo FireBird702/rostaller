@@ -43,7 +43,7 @@ Install all packages.
 rostaller install
 ```
 
-Install all packages from lock file and because of that you can commit package-lock.json file to your repository.
+Install all packages from lock file and because of that you can commit `package-lock.json` file to your repository.
 
 ```sh
 rostaller install --lock
