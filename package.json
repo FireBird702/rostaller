@@ -17,6 +17,6 @@
 	},
 	"devDependencies": {
 		"@yao-pkg/pkg": "^5.12.1",
-		"esbuild": "^0.23.0"
+		"esbuild": "^0.23.1"
 	}
 }
