@@ -36,7 +36,7 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 
 			debugLog(`Getting branch from ${green(dependencyLink)} ...`)
 
-			const release = await getAsync(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`, {
+			const response = await getAsync(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`, {
 				Accept: "application/vnd.github+json",
 				Authorization: config.GithubAccessToken != "" && "Bearer " + config.GithubAccessToken,
 				["X-GitHub-Api-Version"]: "2022-11-28"
@@ -47,7 +47,10 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 				return
 			}
 
-			if (!release || !("name" in release))
+			if (response.status && (response.status == "403" || response.status == "429"))
+				throw "API rate limit exceeded. Create a github personal access token to get a higher rate limit."
+
+			if (!response || !("name" in response))
 				throw "Failed to get branch info"
 
 			// download branch

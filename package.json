@@ -4,19 +4,19 @@
 	"bin": "./src/index.js",
 	"dependencies": {
 		"@iarna/toml": "^2.2.5",
-		"adm-zip": "^0.5.15",
+		"adm-zip": "^0.5.16",
 		"async-await-queue": "^2.1.4",
-		"follow-redirects": "^1.15.6",
+		"follow-redirects": "^1.15.9",
 		"graceful-fs": "^4.2.11",
-		"npm": "^10.8.2",
+		"npm": "^10.8.3",
 		"open": "^10.1.0",
 		"rimraf": "^6.0.1",
 		"semver": "^7.6.3",
-		"yaml": "^2.5.0",
+		"yaml": "^2.5.1",
 		"yargs": "^17.7.2"
 	},
 	"devDependencies": {
-		"@yao-pkg/pkg": "^5.12.1",
+		"@yao-pkg/pkg": "^5.13.0",
 		"esbuild": "^0.23.1"
 	}
 }

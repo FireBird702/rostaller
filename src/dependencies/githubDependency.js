@@ -24,7 +24,13 @@ async function getPackageVersions(scope, name) {
 	let versions = []
 
 	for (const versionData of metadata) {
-		versions.push(clean(versionData.tag_name, { loose: true }))
+		const cleanVersion = clean(versionData.tag_name, { loose: true })
+
+		if (!cleanVersion) {
+			continue
+		}
+
+		versions.push(cleanVersion)
 	}
 
 	versions.sort((v1, v2) => rcompare(v1, v2))
@@ -75,8 +81,11 @@ async function getMetadata(scope, name) {
 		["X-GitHub-Api-Version"]: "2022-11-28"
 	}, "json")
 
-	if (!response)
+	if (!response || (response.status && response.status == "404"))
 		throw "Failed to get list of releases"
+
+	if (response.status && (response.status == "403" || response.status == "429"))
+		throw "API rate limit exceeded. Create a github personal access token to get a higher rate limit."
 
 	metadataCache[`${scope}/${name}`] = response
 	return metadataCache[`${scope}/${name}`]
@@ -144,6 +153,9 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 				debugLog(`Package ${green(formatedDependencyLink)} already exists`)
 				return
 			}
+
+			if (release.status && (release.status == "403" || release.status == "429"))
+				throw "API rate limit exceeded. Create a github personal access token to get a higher rate limit."
 
 			if (!release || !("id" in release))
 				throw "Failed to get release info"
