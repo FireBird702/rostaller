@@ -48,7 +48,7 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 			This typically looks like:
 
 			[place]
-			shared-packages = 'game:GetService("ReplicatedStorage").Packages'
+			shared-packages = "game.ReplicatedStorage.Packages"
 			`).replace(/\t/g, ''))
 
 			process.exit(1)
@@ -67,7 +67,7 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 			This typically looks like:
 
 			[place]
-			server-packages = 'game:GetService("ServerScriptService").Packages'
+			server-packages = "game.ServerScriptService.Packages"
 			`).replace(/\t/g, ''))
 
 			process.exit(1)

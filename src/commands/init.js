@@ -12,19 +12,19 @@ export async function init() {
 		[dependencies]
 		`.replace(/\t/g, '').slice(1)
 
-		const filePath = `${mainPath}/${manifestFileNames.githubManifest}`
+		const filePath = `${mainPath}/${manifestFileNames.rostallerManifest}`
 
 		if (existsSync(filePath)) {
-			console.log(`[${green("INFO", true)}] File ${cyan(manifestFileNames.githubManifest)} already exists in ${cyan(mainPath)}`)
+			console.log(`[${green("INFO", true)}] File ${cyan(manifestFileNames.rostallerManifest)} already exists in ${cyan(mainPath)}`)
 			return
 		}
 
-		debugLog(magenta(`Creating ${manifestFileNames.githubManifest} file ...`, true))
+		debugLog(magenta(`Creating ${manifestFileNames.rostallerManifest} file ...`, true))
 		writeFileSync(filePath, fileData)
 
-		console.log(`[${green("INFO", true)}] Created ${cyan(manifestFileNames.githubManifest)} file in ${cyan(mainPath)}`)
+		console.log(`[${green("INFO", true)}] Created ${cyan(manifestFileNames.rostallerManifest)} file in ${cyan(mainPath)}`)
 	} catch (err) {
-		console.error(`${red(`Failed to create [${manifestFileNames.githubManifest}] file:`)} ${yellow(err)}`)
+		console.error(`${red(`Failed to create [${manifestFileNames.rostallerManifest}] file:`)} ${yellow(err)}`)
 		process.exit(1)
 	}
 }

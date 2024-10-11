@@ -233,8 +233,8 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 				}
 
 				if (!realmOverwrite) {
-					if (content[key] == manifestFileNames.githubManifest) {
-						const packagePath = assetFile + `/${manifestFileNames.githubManifest}`
+					if (content[key] == manifestFileNames.rostallerManifest) {
+						const packagePath = assetFile + `/${manifestFileNames.rostallerManifest}`
 
 						let packageFile = validateToml("SubPackage", packagePath, readFileSync(packagePath).toString())
 						tree[formatedDependencyLink].package.realm = packageFile.package.realm
@@ -250,12 +250,12 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 			}
 
 			if (!tree[formatedDependencyLink].package.realm) {
-				debugLog(`${cyan(assetFile)} is missing "${manifestFileNames.githubManifest}" file. Realm set to ${green("shared")}`)
+				debugLog(`${cyan(assetFile)} is missing "${manifestFileNames.rostallerManifest}" file. Realm set to ${green("shared")}`)
 				tree[formatedDependencyLink].package.realm = "shared"
 			}
 
 			if (!projectFile) {
-				throw `[${manifestFileNames.githubManifest}] is invalid`
+				throw `[${manifestFileNames.rostallerManifest}] is invalid`
 			}
 
 			// rename project name
@@ -290,8 +290,8 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 			var manifestFile
 
 			for (const key in content) {
-				if (content[key] == manifestFileNames.githubManifest)
-					manifestFile = `${assetFile}/${manifestFileNames.githubManifest}`
+				if (content[key] == manifestFileNames.rostallerManifest)
+					manifestFile = `${assetFile}/${manifestFileNames.rostallerManifest}`
 				else if (content[key] == manifestFileNames.wallyManifest)
 					manifestFile = `${assetFile}/${manifestFileNames.wallyManifest}`
 

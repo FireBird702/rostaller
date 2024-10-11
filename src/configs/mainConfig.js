@@ -52,7 +52,7 @@ export const sourcemapName = ".rostallerSourcemap-temp.json"
 export const lockFileName = "rostaller-lock.json"
 
 export const manifestFileNames = {
-	githubManifest: "rostaller.toml",
+	rostallerManifest: "rostaller.toml",
 	wallyManifest: "wally.toml",
 }
 

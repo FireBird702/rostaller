@@ -10,8 +10,8 @@ import { rimraf } from "rimraf"
 
 export async function installFromLock() {
 	try {
-		if (!existsSync(`${mainPath}/${manifestFileNames.githubManifest}`))
-			throw `[${manifestFileNames.githubManifest}] does not exist`
+		if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
+			throw `[${manifestFileNames.rostallerManifest}] does not exist`
 
 		debugLog(magenta(`Checking ${lockFileName} file ...`, true))
 		const lockFilePath = `${mainPath}/${lockFileName}`

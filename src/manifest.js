@@ -97,7 +97,7 @@ export async function downloadManifestDependencies(manifestFile, tree, parentDep
 
 	if (manifestName == manifestFileNames.wallyManifest)
 		fileType = "wally"
-	else if (manifestName == manifestFileNames.githubManifest)
+	else if (manifestName == manifestFileNames.rostallerManifest)
 		fileType = "github"
 	else
 		fileType = "unknown"
@@ -158,7 +158,7 @@ export async function downloadManifestDependencies(manifestFile, tree, parentDep
  * @param {any} tree
  */
 export async function downloadLockDependencies(lockFileData, tree) {
-	const manifestData = await getManifestData(manifestFileNames.githubManifest, true)
+	const manifestData = await getManifestData(manifestFileNames.rostallerManifest, true)
 
 	debugLog("Mapping", green(parse(process.cwd()).name))
 

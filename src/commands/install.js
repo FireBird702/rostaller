@@ -10,8 +10,8 @@ import { updateRootToml } from "../updateRootToml.js"
 
 export async function install() {
 	try {
-		if (!existsSync(`${mainPath}/${manifestFileNames.githubManifest}`))
-			throw `[${manifestFileNames.githubManifest}] does not exist`
+		if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
+			throw `[${manifestFileNames.rostallerManifest}] does not exist`
 
 		debugLog(magenta("Clearing package directories ...", true))
 		await rimraf(getPackageFolderPath("shared")) // clear previous packages
@@ -22,7 +22,7 @@ export async function install() {
 		var mapTree = {}
 
 		debugLog(magenta("Downloading dependencies from manifest files ...", true))
-		await downloadManifestDependencies(manifestFileNames.githubManifest, mapTree, undefined, true)
+		await downloadManifestDependencies(manifestFileNames.rostallerManifest, mapTree, undefined, true)
 
 		debugLog(magenta("Creating .luau files ...", true))
 		await createLuauFiles(mapTree)
@@ -33,10 +33,10 @@ export async function install() {
 		await generateLockFile(mapTree)
 
 		if (downloadStats.failed == 0) {
-			debugLog(magenta(`Updating root ${manifestFileNames.githubManifest} file ...`, true))
+			debugLog(magenta(`Updating root ${manifestFileNames.rostallerManifest} file ...`, true))
 			await updateRootToml(mapTree)
 		} else
-			debugLog(magenta(`Some packages failed to update, root ${manifestFileNames.githubManifest} file will not be updated ...`, true))
+			debugLog(magenta(`Some packages failed to update, root ${manifestFileNames.rostallerManifest} file will not be updated ...`, true))
 
 		console.log(`[${green("INFO", true)}] Downloaded ${downloadStats.success} packages, ${downloadStats.failed} failed!`)
 	} catch (err) {

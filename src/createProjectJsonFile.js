@@ -1,5 +1,6 @@
 import { writeFileSync } from "fs"
 import { projectJsonName } from "./configs/mainConfig.js"
+import { rootManifestConfig } from "./configs/rootManifestConfig.js"
 
 export function createProjectJsonFile(map) {
 	var packageTypes = {
@@ -36,7 +37,7 @@ export function createProjectJsonFile(map) {
 			fileData.tree.ReplicatedStorage = {}
 
 		fileData.tree.ReplicatedStorage.Packages = {
-			$path: "Packages"
+			$path: rootManifestConfig.PackagesFolder
 		}
 	}
 
@@ -45,7 +46,7 @@ export function createProjectJsonFile(map) {
 			fileData.tree.ServerScriptService = {}
 
 		fileData.tree.ServerScriptService.ServerPackages = {
-			$path: "ServerPackages"
+			$path: rootManifestConfig.ServerPackagesFolder
 		}
 	}
 
@@ -54,7 +55,7 @@ export function createProjectJsonFile(map) {
 			fileData.tree.ReplicatedStorage = {}
 
 		fileData.tree.ReplicatedStorage.DevPackages = {
-			$path: "DevPackages"
+			$path: rootManifestConfig.DevPackagesFolder
 		}
 	}
 

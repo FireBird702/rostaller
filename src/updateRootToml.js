@@ -14,10 +14,10 @@ function isEmpty(x) {
 }
 
 export async function updateRootToml(map) {
-	if (!existsSync(`${mainPath}/${manifestFileNames.githubManifest}`))
-		throw `[${manifestFileNames.githubManifest}] does not exist`
+	if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
+		throw `[${manifestFileNames.rostallerManifest}] does not exist`
 
-	var rootManifestData = await getManifestData(`${mainPath}/${manifestFileNames.githubManifest}`, true)
+	var rootManifestData = await getManifestData(`${mainPath}/${manifestFileNames.rostallerManifest}`, true)
 
 	for (const dependency in map) {
 		const alias = map[dependency].alias
@@ -85,5 +85,5 @@ export async function updateRootToml(map) {
 		rootManifestData["server-dependencies-overwrite"] = sortDictionaryByKey(rootManifestData["server-dependencies-overwrite"])
 	}
 
-	writeFileSync(`${mainPath}/${manifestFileNames.githubManifest}`, stringify(rootManifestData))
+	writeFileSync(`${mainPath}/${manifestFileNames.rostallerManifest}`, stringify(rootManifestData))
 }

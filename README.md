@@ -106,10 +106,10 @@ TestEZ = "wally#roblox/testez@0.4.1"
 # Value on the right is a path to Packages folder.
 
 # It is required if server or dev dependency is depending on a shared dependency.
-shared-packages = 'game:GetService("ReplicatedStorage").Packages'
+shared-packages = "game.ReplicatedStorage.Packages"
 
 # It is required if dev dependency is depending on a server dependency.
-server-packages = 'game:GetService("ServerScriptService").Packages'
+server-packages = "game.ServerScriptService.Packages"
 ```
 
 ## Additional Informations

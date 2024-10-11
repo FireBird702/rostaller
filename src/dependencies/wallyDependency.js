@@ -192,8 +192,8 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 			var manifestFile
 
 			for (const key in content) {
-				if (content[key] == manifestFileNames.githubManifest)
-					manifestFile = `${assetFile}/${manifestFileNames.githubManifest}`
+				if (content[key] == manifestFileNames.rostallerManifest)
+					manifestFile = `${assetFile}/${manifestFileNames.rostallerManifest}`
 				else if (content[key] == manifestFileNames.wallyManifest)
 					manifestFile = `${assetFile}/${manifestFileNames.wallyManifest}`
 
