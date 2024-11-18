@@ -4,11 +4,15 @@
 	"main": "index.node",
 	"type": "module",
 	"scripts": {
-		"test": "cargo test",
-		"run-build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
+		"cargo-build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
+		"cross-build": "cargo-cp-artifact -nc index.node -- cross build --message-format=json-render-diagnostics",
+		"postcargo-build": "npm run run-esbuild && npm run run-pkg",
+		"postcross-build": "npm run run-esbuild && npm run run-pkg",
 		"run-esbuild": "esbuild --platform=node --bundle --loader:.node=copy --format=cjs --define:import.meta.url=_importMetaUrl \"--banner:js=const _importMetaUrl = require('url').pathToFileURL(__filename)\" --outfile=rostaller.js ./src/index.js",
 		"run-pkg": "pkg --no-bytecode --public --targets latest-win,latest-macos,latest-macos-arm64,latest-linux,latest-linux-arm64 --public-packages '*' --out-path bin rostaller.js",
-		"build": "npm run run-build && npm run run-esbuild && npm run run-pkg"
+		"debug": "npm run cargo-build --",
+		"build": "npm run cargo-build -- --release",
+		"cross": "npm run cross-build -- --release"
 	},
 	"dependencies": {
 		"@iarna/toml": "^2.0.0",
@@ -16,11 +20,9 @@
 		"async-await-queue": "^2.0.0",
 		"follow-redirects": "^1.0.0",
 		"graceful-fs": "^4.0.0",
-		"npm": "^10.0.0",
 		"open": "^10.0.0",
 		"rimraf": "^6.0.0",
 		"semver": "^7.0.0",
-		"yaml": "^2.0.0",
 		"yargs": "^17.0.0"
 	},
 	"devDependencies": {
