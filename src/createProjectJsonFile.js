@@ -1,6 +1,27 @@
 import { writeFileSync } from "fs"
-import { projectJsonName } from "./configs/mainConfig.js"
-import { rootManifestConfig } from "./configs/rootManifestConfig.js"
+import { projectJsonName } from "./configs/mainConfig"
+import { rootManifestConfig } from "./configs/rootManifestConfig"
+
+function createJsonPath(fileData, packagesPathString, packagesFolder) {
+	const pathElements = packagesPathString.split(".")
+
+	var path = fileData.tree
+
+	for (const i in pathElements) {
+		if (pathElements[i] == "game" && parseInt(i) == 0)
+			continue
+
+		if (!path[pathElements[i]])
+			path[pathElements[i]] = {}
+
+		if (parseInt(i) + 1 == pathElements.length)
+			path[pathElements[i]] = {
+				$path: packagesFolder
+			}
+
+		path = path[pathElements[i]]
+	}
+}
 
 export function createProjectJsonFile(map) {
 	var packageTypes = {
@@ -32,32 +53,14 @@ export function createProjectJsonFile(map) {
 		}
 	}
 
-	if (packageTypes.sharedPackages) {
-		if (!fileData.tree.ReplicatedStorage)
-			fileData.tree.ReplicatedStorage = {}
+	if (packageTypes.sharedPackages)
+		createJsonPath(fileData, rootManifestConfig.sharedPackages, rootManifestConfig.sharedPackagesFolder)
 
-		fileData.tree.ReplicatedStorage.Packages = {
-			$path: rootManifestConfig.PackagesFolder
-		}
-	}
+	if (packageTypes.serverPackages)
+		createJsonPath(fileData, rootManifestConfig.serverPackages, rootManifestConfig.serverPackagesFolder)
 
-	if (packageTypes.serverPackages) {
-		if (!fileData.tree.ServerScriptService)
-			fileData.tree.ServerScriptService = {}
-
-		fileData.tree.ServerScriptService.ServerPackages = {
-			$path: rootManifestConfig.ServerPackagesFolder
-		}
-	}
-
-	if (packageTypes.devPackages) {
-		if (!fileData.tree.ReplicatedStorage)
-			fileData.tree.ReplicatedStorage = {}
-
-		fileData.tree.ReplicatedStorage.DevPackages = {
-			$path: rootManifestConfig.DevPackagesFolder
-		}
-	}
+	if (packageTypes.devPackages)
+		createJsonPath(fileData, "game.ReplicatedStorage.DevPackages", rootManifestConfig.devPackagesFolder)
 
 	writeFileSync(projectJsonName, JSON.stringify(fileData, null, "\t"))
 }

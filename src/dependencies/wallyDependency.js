@@ -1,10 +1,11 @@
+import path from "path"
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "fs"
-import { resolve } from "path"
-import { red, yellow, green, cyan } from "../output/colors.js"
-import { validateJson } from "../validator/validator.js"
-import { getAsync } from "../httpGet.js"
-import { config, defaultProjectJsonName, downloadStats, manifestFileNames, getPackageFolderPath } from "../configs/mainConfig.js"
-import { debugLog } from "../output/output.js"
+import { red, yellow, green, cyan } from "../output/colors"
+import { validateJson } from "../validator/validator"
+import { getAsync } from "../httpGet"
+import { config, defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames } from "../configs/mainConfig"
+import { debugLog } from "../output/output"
+import { getPackageFolderPath } from "../packageFolderPath"
 import { clean, rcompare, maxSatisfying } from "semver"
 import { rimraf } from "rimraf"
 import AdmZip from "adm-zip"
@@ -67,7 +68,7 @@ async function getMetadata(scope, name) {
 		return metadataCache[`${scope}/${name}`]
 
 	const response = await getAsync(`https://api.wally.run/v1/package-metadata/${scope}/${name}`, {
-		Authorization: config.WallyAccessToken != "" && "Bearer " + config.WallyAccessToken,
+		Authorization: config.auth.wallyAccessToken != "" && "Bearer " + config.auth.wallyAccessToken,
 		["Wally-Version"]: "0.3.2"
 	}, "json")
 
@@ -115,7 +116,7 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 
 		const realm = realmOverwrite || versionMetadata.package.realm
 
-		const assetPath = `${getPackageFolderPath(realm)}/_Index/${owner.toLowerCase()}_${repo.toLowerCase()}`
+		const assetPath = `${getPackageFolderPath(realm)}/${defaultFolderNames.indexFolder}/${owner.toLowerCase()}_${repo.toLowerCase()}`
 
 		if (!tree[formatedDependencyLink])
 			tree[formatedDependencyLink] = { dependencies: {} }
@@ -143,7 +144,7 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 			debugLog(`Downloading ${green(formatedDependencyLink)} ...`)
 
 			const asset = await getAsync(`https://api.wally.run/v1/package-contents/${owner}/${repo}/${packageVersion}`, {
-				Authorization: config.WallyAccessToken != "" && "Bearer " + config.WallyAccessToken,
+				Authorization: config.auth.wallyAccessToken != "" && "Bearer " + config.auth.wallyAccessToken,
 				["Wally-Version"]: "0.3.2",
 			}, "wally")
 
@@ -164,7 +165,7 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 			let assetFile = assetFolder + `/${repo.toLowerCase()}`
 
 			var zip = new AdmZip(assetZip)
-			zip.extractAllTo(resolve(assetFile), true)
+			zip.extractAllTo(path.resolve(assetFile), true)
 
 			await rimraf(assetZip)
 
@@ -209,7 +210,7 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 			debugLog(`Package ${green(formatedDependencyLink)} already exists`)
 		}
 	} catch (err) {
-		downloadStats.failed += 1
+		downloadStats.fail += 1
 		console.error(red("Failed to download wally package"), green(dependencyLink) + red(":"), yellow(err))
 	}
 }
@@ -230,7 +231,7 @@ export async function wallyDeepDependency(alias, dependencyLink, tree, parentDep
 		if (!result.manifestFile)
 			return
 
-		const downloadManifestDependencies = (await import("../manifest.js")).downloadManifestDependencies
+		const downloadManifestDependencies = (await import("../manifest")).downloadManifestDependencies
 		await downloadManifestDependencies(result.manifestFile, tree, tree[result.packageLink].dependencies)
 	} catch (err) {
 		console.error(red("Failed to check wally package dependencies"), green(dependencyLink) + red(":"), yellow(err))

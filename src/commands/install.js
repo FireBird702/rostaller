@@ -1,15 +1,18 @@
 import { existsSync } from "fs"
-import { red, green, magenta, yellow } from "../output/colors.js"
-import { mainPath, downloadStats, lockFileName, manifestFileNames, getPackageFolderPath } from "../configs/mainConfig.js"
-import { downloadManifestDependencies } from "../manifest.js"
-import { createLuauFiles } from "../luauFileCreator.js"
-import { debugLog } from "../output/output.js"
-import { generateLockFile } from "../lockFileCreator.js"
+import { red, green, magenta, yellow } from "../output/colors"
+import { mainPath, downloadStats, lockFileName, manifestFileNames } from "../configs/mainConfig"
+import { downloadManifestDependencies } from "../manifest"
+import { createLuauFiles } from "../luauFileCreator"
+import { debugLog } from "../output/output"
+import { generateLockFile } from "../lockFileCreator"
+import { updateRootToml } from "../updateRootToml"
+import { getPackageFolderPath } from "../packageFolderPath"
 import { rimraf } from "rimraf"
-import { updateRootToml } from "../updateRootToml.js"
 
 export async function install() {
 	try {
+		const startTime = Date.now()
+
 		if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
 			throw `[${manifestFileNames.rostallerManifest}] does not exist`
 
@@ -32,13 +35,20 @@ export async function install() {
 		debugLog(magenta(`Generating ${lockFileName} file ...`, true))
 		await generateLockFile(mapTree)
 
-		if (downloadStats.failed == 0) {
+		if (downloadStats.fail == 0) {
 			debugLog(magenta(`Updating root ${manifestFileNames.rostallerManifest} file ...`, true))
 			await updateRootToml(mapTree)
 		} else
 			debugLog(magenta(`Some packages failed to update, root ${manifestFileNames.rostallerManifest} file will not be updated ...`, true))
 
-		console.log(`[${green("INFO", true)}] Downloaded ${downloadStats.success} packages, ${downloadStats.failed} failed!`)
+		var finalMessage = `[${green("INFO", true)}] Downloaded ${downloadStats.success} packages`
+
+		if (!downloadStats.fail == 0)
+			finalMessage += `, ${downloadStats.fail} failed`
+
+		console.log(finalMessage)
+
+		debugLog(magenta(`Time passed: ${(Date.now() - startTime) / 1000} seconds`, true))
 	} catch (err) {
 		console.error(`${red(`Failed to install packages:`)} ${yellow(err)}`)
 		process.exit(1)

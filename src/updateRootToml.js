@@ -1,9 +1,9 @@
 import { existsSync, writeFileSync } from "fs"
-import { mainPath, manifestFileNames } from "./configs/mainConfig.js"
-import { getManifestData } from "./manifest.js"
+import { mainPath, manifestFileNames } from "./configs/mainConfig"
+import { getManifestData } from "./manifest"
 import { clean } from "semver"
-import { stringify } from "@iarna/toml"
-import { sortDictionaryByKey } from "./sortDictionaryByKey.js"
+import toml from "@iarna/toml"
+import { sortDictionaryByKey } from "./sortDictionaryByKey"
 
 function isEmpty(x) {
 	for (var _i in x) {
@@ -85,5 +85,5 @@ export async function updateRootToml(map) {
 		rootManifestData["server-dependencies-overwrite"] = sortDictionaryByKey(rootManifestData["server-dependencies-overwrite"])
 	}
 
-	writeFileSync(`${mainPath}/${manifestFileNames.rostallerManifest}`, stringify(rootManifestData))
+	writeFileSync(`${mainPath}/${manifestFileNames.rostallerManifest}`, toml.stringify(rootManifestData))
 }

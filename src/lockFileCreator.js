@@ -1,5 +1,6 @@
 import { writeFileSync } from "fs"
-import { lockFileName, mainPath } from "./configs/mainConfig.js"
+import { lockFileName, mainPath } from "./configs/mainConfig"
+import toml from "@iarna/toml"
 
 function getPackageFullName(packageData) {
 	if (packageData.type == "github-branch")
@@ -39,5 +40,5 @@ export async function generateLockFile(map) {
 		formatPackage(key, map, fileData)
 	}
 
-	writeFileSync(`${mainPath}/${lockFileName}`, JSON.stringify(fileData, null, "\t"))
+	writeFileSync(`${mainPath}/${lockFileName}`, toml.stringify(fileData))
 }

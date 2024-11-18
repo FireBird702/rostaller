@@ -1,13 +1,13 @@
+import path from "path"
 import { existsSync, readFileSync } from "fs"
-import { resolve, parse } from "path"
-import { rootManifestConfig } from "./configs/rootManifestConfig.js"
-import { config, manifestFileNames } from "./configs/mainConfig.js"
-import { validateToml } from "./validator/validator.js"
-import { githubDeepDependency, githubDependency } from "./dependencies/githubDependency.js"
-import { githubBranchDeepDependency, githubBranchDependency } from "./dependencies/githubBranchDependency.js"
-import { wallyDeepDependency, wallyDependency } from "./dependencies/wallyDependency.js"
-import { cyan, green } from "./output/colors.js"
-import { debugLog } from "./output/output.js"
+import { rootManifestConfig } from "./configs/rootManifestConfig"
+import { config, manifestFileNames } from "./configs/mainConfig"
+import { validateToml } from "./validator/validator"
+import { githubDeepDependency, githubDependency } from "./dependencies/githubDependency"
+import { githubBranchDeepDependency, githubBranchDependency } from "./dependencies/githubBranchDependency"
+import { wallyDeepDependency, wallyDependency } from "./dependencies/wallyDependency"
+import { cyan, green } from "./output/colors"
+import { debugLog } from "./output/output"
 import { Queue } from "async-await-queue"
 
 async function downloadDeepDependency(alias, dependencyLink, fileType, tree, parentDependencies, realmOverwrite) {
@@ -65,17 +65,30 @@ export async function getManifestData(manifestFile, isRoot) {
 	if (!manifestData)
 		throw `[${manifestFile}] is invalid`
 
-	process.chdir(resolve(manifestFile, ".."))
+	process.chdir(path.resolve(manifestFile, ".."))
 
 	return manifestData
 }
 
 export function setConfigFromRootManifest(manifestData) {
-	if (manifestData.place && manifestData.place["shared-packages"])
-		rootManifestConfig.sharedPackages = manifestData.place["shared-packages"]
+	if (manifestData.place) {
+		if (manifestData.place["shared-packages"])
+			rootManifestConfig.sharedPackages = manifestData.place["shared-packages"]
 
-	if (manifestData.place && manifestData.place["server-packages"])
-		rootManifestConfig.serverPackages = manifestData.place["server-packages"]
+		if (manifestData.place["server-packages"])
+			rootManifestConfig.serverPackages = manifestData.place["server-packages"]
+	}
+
+	if (manifestData.config) {
+		if (manifestData.config["shared-packages"])
+			rootManifestConfig.sharedPackagesFolder = manifestData.config["shared-packages"]
+
+		if (manifestData.config["server-packages"])
+			rootManifestConfig.serverPackagesFolder = manifestData.config["server-packages"]
+
+		if (manifestData.config["dev-packages"])
+			rootManifestConfig.devPackagesFolder = manifestData.config["server-packages"]
+	}
 }
 
 /**
@@ -87,12 +100,12 @@ export function setConfigFromRootManifest(manifestData) {
 export async function downloadManifestDependencies(manifestFile, tree, parentDependencies, isRoot) {
 	const manifestData = await getManifestData(manifestFile, isRoot)
 
-	debugLog("Mapping", green(parse(process.cwd()).name))
+	debugLog("Mapping", green(path.parse(process.cwd()).name))
 
 	if (isRoot)
 		setConfigFromRootManifest(manifestData)
 
-	const manifestName = parse(manifestFile).base
+	const manifestName = path.parse(manifestFile).base
 	var fileType
 
 	if (manifestName == manifestFileNames.wallyManifest)
@@ -105,7 +118,7 @@ export async function downloadManifestDependencies(manifestFile, tree, parentDep
 	if (fileType == "unknown")
 		throw `[${manifestFile}] is not the correct manifest file`
 
-	const queue = new Queue(config.MaxConcurrentDownloads)
+	const queue = new Queue(config.maxConcurrentDownloads)
 	const promises = []
 
 	const dependencies = manifestData.dependencies
@@ -160,11 +173,11 @@ export async function downloadManifestDependencies(manifestFile, tree, parentDep
 export async function downloadLockDependencies(lockFileData, tree) {
 	const manifestData = await getManifestData(manifestFileNames.rostallerManifest, true)
 
-	debugLog("Mapping", green(parse(process.cwd()).name))
+	debugLog("Mapping", green(path.parse(process.cwd()).name))
 
 	setConfigFromRootManifest(manifestData)
 
-	const queue = new Queue(config.MaxConcurrentDownloads)
+	const queue = new Queue(config.maxConcurrentDownloads)
 	const promises = []
 
 	for (const dependencyLink in lockFileData) {

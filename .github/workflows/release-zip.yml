@@ -18,7 +18,7 @@ jobs:
     - name: Install Node
       uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: "22"
 
     - name: Install dependencies
       run: |
@@ -26,12 +26,11 @@ jobs:
 
     - name: Compile and build
       run: |
-        ./node_modules/.bin/esbuild --platform=node --bundle --format=cjs --define:import.meta.url=_importMetaUrl "--banner:js=const _importMetaUrl = require('url').pathToFileURL(__filename)" --outfile=rostaller.js ./src/index.js
-        ./node_modules/.bin/pkg --no-bytecode --public --targets latest-win,latest-macos,latest-macos-arm64,latest-linux,latest-linux-arm64 --public-packages '*' --out-path bin rostaller.js
+        npm run build
 
     - name: Get release
       id: get_release
-      uses: bruceadams/get-release@main
+      uses: joutvhu/get-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

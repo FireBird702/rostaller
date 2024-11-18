@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "fs"
-import { red, green, magenta, cyan, yellow } from "../output/colors.js"
-import { mainPath, manifestFileNames } from "../configs/mainConfig.js"
-import { debugLog } from "../output/output.js"
+import { red, green, magenta, cyan, yellow } from "../output/colors"
+import { mainPath, manifestFileNames } from "../configs/mainConfig"
+import { debugLog } from "../output/output"
 
 export async function init() {
 	try {

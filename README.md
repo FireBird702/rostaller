@@ -1,13 +1,13 @@
 # rostaller - A simple tool for simple needs
 
-Download packages from [wally][wally], github releases and github branches (useful when you don't want to create private registry or package is not available on [wally][wally])
+Download packages from [wally][wally] and [github][github]
 
+[github]: https://github.com
 [wally]: https://github.com/UpliftGames/wally
 
 * [Installation](#installation)
 * [Commands](#commands)
 * [Manifest Format](#manifest-format)
-* [Additional Informations](#additional-informations)
 
 ## Installation
 
@@ -43,10 +43,10 @@ Install all packages.
 rostaller install
 ```
 
-Install all packages from lock file and because of that you can commit `package-lock.json` file to your repository.
+Install all packages from lockfile.
 
 ```sh
-rostaller install --lock
+rostaller install --locked
 ```
 
 Open rostaller config.
@@ -103,15 +103,18 @@ realm = "shared"
 TestEZ = "wally#roblox/testez@0.4.1"
 
 [place]
-# Value on the right is a path to Packages folder.
+# This is used to specify where packages are located in the Roblox datamodel.
 
 # It is required if server or dev dependency is depending on a shared dependency.
 shared-packages = "game.ReplicatedStorage.Packages"
 
 # It is required if dev dependency is depending on a server dependency.
 server-packages = "game.ServerScriptService.Packages"
+
+[config]
+# This can be used to overwrite realm folder names.
+
+shared-packages = "packages",
+server-packages = "serverPackages",
+dev-packages = "devPackages",
 ```
-
-## Additional Informations
-
-rostaller uses [wally-package-types](https://github.com/JohnnyMorganz/wally-package-types) for exporting types, necessary for proper Luau type checking support.

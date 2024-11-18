@@ -1,53 +1,47 @@
 import yargs from "yargs"
-import { config } from "./commands/config.js"
-import { init } from "./commands/init.js"
-import { install } from "./commands/install.js"
-import { installFromLock } from "./commands/installFromLock.js"
-import { version } from "./version.js"
+import { config } from "./commands/config"
+import { init } from "./commands/init"
+import { install } from "./commands/install"
+import { installFromLock } from "./commands/installFromLock"
 
 if (!process.pkg) {
-	process.exit(0)
+	process.exit()
 }
 
 const args = process.argv.slice(2)
 
 yargs(args)
-	.scriptName("rostaller")
-	.usage("Usage: rostaller [options]")
-
-	.alias("v", "version")
-	.version(version)
-	.describe("version", "show version information")
+	.usage("Usage: $0 <command>")
 
 	.alias("h", "help")
-	.help("help")
-	.describe("help", "show help")
-	.showHelpOnFail(true)
+	.alias("v", "version")
 
 	.command(
 		"config",
-		"open the config file",
+		"Opens the config file",
 		() => { },
 		config
 	)
 
 	.command(
 		"init",
-		"create new manifest file",
+		"Creates new manifest file",
 		() => { },
 		init
 	)
 
 	.command(
 		"install",
-		"install all dependencies",
+		"Installs all dependencies for the project",
 		(yargs) => {
 			yargs
-				.boolean("lock")
-				.describe("lock", "get dependencies from the lock file")
+				.option("locked", {
+					describe: 'Install all dependencies from the lockfile',
+				})
+				.boolean("locked")
 		},
 		async (args) => {
-			if (args.lock)
+			if (args.locked)
 				await installFromLock()
 			else
 				await install()

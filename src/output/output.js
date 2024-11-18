@@ -1,5 +1,5 @@
-import { config } from "../configs/mainConfig.js"
-import { yellow, red, green } from "./colors.js"
+import { config } from "../configs/mainConfig"
+import { yellow, red, green } from "./colors"
 
 const drop = "\n └──"
 const drop2 = "\n └─┬"
@@ -59,7 +59,7 @@ export function jsonError(s, from, to, key) {
 }
 
 export function debugLog(message, ...optionalParams) {
-	if (!config.Debug)
+	if (!config.debug)
 		return
 
 	console.log(message, ...optionalParams)

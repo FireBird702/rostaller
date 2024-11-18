@@ -1,11 +1,14 @@
 import { existsSync, writeFileSync } from "fs"
-import { config, getPackageFolderPath, mainPath, projectJsonName, sourcemapName } from "./configs/mainConfig.js"
-import { rootManifestConfig } from "./configs/rootManifestConfig.js"
-import { magenta, yellow } from "./output/colors.js"
-import { debugLog } from "./output/output.js"
-import { createProjectJsonFile } from "./createProjectJsonFile.js"
+import { config, defaultFolderNames, mainPath, projectJsonName, sourcemapName } from "./configs/mainConfig"
+import { rootManifestConfig } from "./configs/rootManifestConfig"
+import { magenta, yellow } from "./output/colors"
+import { debugLog } from "./output/output"
+import { createProjectJsonFile } from "./createProjectJsonFile"
+import { getPackageFolderPath } from "./packageFolderPath"
 import { execSync } from "child_process"
 import { rimraf } from "rimraf"
+
+const addon = require('..')
 
 /**
  * @param {string} realm
@@ -16,7 +19,7 @@ async function createLuauRootFile(realm, packageAlias, packageData) {
 	const fullName = `${packageData.owner.toLowerCase()}_${packageData.name.toLowerCase()}@${packageData.version}`
 	const shortName = packageData.name.toLowerCase()
 
-	let moduleData = `return require(script.Parent._Index["${fullName}"]["${shortName}"])\n`
+	let moduleData = `return require(script.Parent.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
 	writeFileSync(`${getPackageFolderPath(realm)}/${packageAlias}.luau`, moduleData)
 }
 
@@ -54,7 +57,7 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 			process.exit(1)
 		}
 
-		moduleData = `return require(${sharedPackages}._Index["${fullName}"]["${shortName}"])\n`
+		moduleData = `return require(${sharedPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
 	} else if (packageData.realm == "server" && parentPackage.realm == "dev") {
 		const serverPackages = rootManifestConfig.serverPackages
 
@@ -73,12 +76,12 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 			process.exit(1)
 		}
 
-		moduleData = `return require(${serverPackages}._Index["${fullName}"]["${shortName}"])\n`
+		moduleData = `return require(${serverPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
 	} else {
 		throw `${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.realm}" realm cannot access ${packageAlias} (${fullName}) in "${packageData.realm}" realm`
 	}
 
-	writeFileSync(`${getPackageFolderPath(realm)}/_Index/${parentPackageFullName}/${packageAlias}.luau`, moduleData)
+	writeFileSync(`${getPackageFolderPath(realm)}/${defaultFolderNames.indexFolder}/${parentPackageFullName}/${packageAlias}.luau`, moduleData)
 }
 
 export async function createLuauFiles(map) {
@@ -102,45 +105,27 @@ export async function createLuauFiles(map) {
 
 	var stdio
 
-	if (!config.Debug)
+	if (!config.debug)
 		stdio = "ignore"
 
 	debugLog(magenta("Creating sourcemap file ...", true))
-	execSync(`${config.GenerateSourcemapTool} sourcemap ${projectJsonName} --output ${sourcemapName}`, { stdio: stdio })
-
-	if (!config.ManualWallyPackageTypesInstallation) {
-		debugLog(magenta("Checking wally-package-types ...", true))
-		var typesFixerInstalled = true
-
-		try {
-			execSync(`wally-package-types --version`, { stdio: "ignore" })
-		} catch (err) {
-			typesFixerInstalled = false
-		}
-
-		try {
-			execSync("rokit trust JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
-			execSync("rokit add --global JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
-		} catch (err) { }
-
-		execSync("rokit update --global JohnnyMorganz/wally-package-types", { stdio: (!typesFixerInstalled && "inherit") || stdio })
-	}
+	execSync(`${config.sourcemapGenerator} sourcemap ${projectJsonName} --output ${sourcemapName}`, { stdio: stdio })
 
 	debugLog(magenta("Adding types to .luau files ...", true))
 
 	try {
 		if (existsSync(getPackageFolderPath("shared")))
-			execSync(`wally-package-types --sourcemap ${sourcemapName} ${rootManifestConfig.PackagesFolder}/`, { stdio: stdio })
+			await addon.generate_types(sourcemapName, `${rootManifestConfig.sharedPackagesFolder}/`)
 	} catch (err) { }
 
 	try {
 		if (existsSync(getPackageFolderPath("server")))
-			execSync(`wally-package-types --sourcemap ${sourcemapName} ${rootManifestConfig.ServerPackagesFolder}/`, { stdio: stdio })
+			await addon.generate_types(sourcemapName, `${rootManifestConfig.serverPackagesFolder}/`)
 	} catch (err) { }
 
 	try {
 		if (existsSync(getPackageFolderPath("dev")))
-			execSync(`wally-package-types --sourcemap ${sourcemapName} ${rootManifestConfig.DevPackagesFolder}/`, { stdio: stdio })
+			await addon.generate_types(sourcemapName, `${rootManifestConfig.devPackagesFolder}/`)
 	} catch (err) { }
 
 	debugLog(magenta("Removing project.json file ...", true))

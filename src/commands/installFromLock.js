@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from "fs"
-import { red, green, magenta, yellow } from "../output/colors.js"
-import { mainPath, downloadStats, lockFileName, manifestFileNames, getPackageFolderPath } from "../configs/mainConfig.js"
-import { downloadLockDependencies } from "../manifest.js"
-import { createLuauFiles } from "../luauFileCreator.js"
-import { debugLog } from "../output/output.js"
-import { validateJson } from "../validator/validator.js"
+import { red, green, magenta, yellow } from "../output/colors"
+import { mainPath, downloadStats, lockFileName, manifestFileNames } from "../configs/mainConfig"
+import { downloadLockDependencies } from "../manifest"
+import { createLuauFiles } from "../luauFileCreator"
+import { debugLog } from "../output/output"
+import { validateToml } from "../validator/validator"
+import { getPackageFolderPath } from "../packageFolderPath"
 import { clean } from "semver"
 import { rimraf } from "rimraf"
 
@@ -20,7 +21,9 @@ export async function installFromLock() {
 			throw `Unable to locate [${lockFileName}] file`
 		}
 
-		const lockFileData = validateJson(undefined, lockFilePath, readFileSync(lockFilePath))
+		const lockFileData = validateToml(undefined, lockFilePath, readFileSync(lockFilePath))
+
+		console.log(lockFileData)
 
 		debugLog(magenta("Clearing package directories ...", true))
 		await rimraf(getPackageFolderPath("shared")) // clear previous packages
@@ -63,7 +66,12 @@ export async function installFromLock() {
 		debugLog(magenta("Creating .luau files ...", true))
 		await createLuauFiles(mapTree)
 
-		console.log(`[${green("INFO", true)}] Downloaded ${downloadStats.success} packages, ${downloadStats.failed} failed!`)
+		var finalMessage = `[${green("INFO", true)}] Downloaded ${downloadStats.success} packages`
+
+		if (!downloadStats.fail == 0)
+			finalMessage += `, ${downloadStats.fail} failed`
+
+		console.log(finalMessage)
 	} catch (err) {
 		console.error(`${red(`Failed to install packages:`)} ${yellow(err)}`)
 		process.exit(1)

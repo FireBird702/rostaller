@@ -1,11 +1,11 @@
-*.lock
-~$*
-node_modules
-bin
+/packages
+/serverPackages
+/devPackages
 
-Packages
-ServerPackages
-DevPackages
-
-rostaller*
-*.project.json
+/node_modules
+/bin
+/target
+/rostaller*
+*.node
+/.temp*
+/run_tests.js

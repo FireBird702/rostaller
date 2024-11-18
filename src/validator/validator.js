@@ -1,8 +1,8 @@
-import { yellow } from "../output/colors.js"
-import { fileError } from "../output/output.js"
-import { validate as validateRootPackage } from "./rootPackage.js"
-import { validate as validatePackage } from "./package.js"
-import { parse } from "@iarna/toml"
+import { yellow } from "../output/colors"
+import { fileError } from "../output/output"
+import { validate as validateRootPackage } from "./rootPackage"
+import { validate as validatePackage } from "./package"
+import toml from "@iarna/toml"
 
 /**
  * @param {string?} type
@@ -37,7 +37,7 @@ export function validateToml(type, localPath, fileRead) {
 	let tomlData
 
 	try {
-		tomlData = parse(fileRead)
+		tomlData = toml.parse(fileRead)
 	} catch (err) {
 		console.error(fileError(localPath), yellow("Malformed TOML:"), yellow(err))
 	}

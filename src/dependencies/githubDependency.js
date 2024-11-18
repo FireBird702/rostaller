@@ -1,13 +1,14 @@
+import path from "path"
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "fs"
-import { resolve } from "path"
-import { red, yellow, green, cyan } from "../output/colors.js"
-import { validateJson, validateToml } from "../validator/validator.js"
-import { getAsync } from "../httpGet.js"
-import { config, defaultProjectJsonName, downloadStats, manifestFileNames, getPackageFolderPath } from "../configs/mainConfig.js"
-import { debugLog } from "../output/output.js"
+import { red, yellow, green, cyan } from "../output/colors"
+import { validateJson, validateToml } from "../validator/validator"
+import { getAsync } from "../httpGet"
+import { config, defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames } from "../configs/mainConfig"
+import { debugLog } from "../output/output"
+import { renameFile } from "../renameFile"
+import { getPackageFolderPath } from "../packageFolderPath"
 import { clean, rcompare, maxSatisfying } from "semver"
 import { rimraf } from "rimraf"
-import { renameFile } from "../renameFile.js"
 import AdmZip from "adm-zip"
 
 const UTF8 = new TextDecoder("utf-8")
@@ -77,7 +78,7 @@ async function getMetadata(scope, name) {
 
 	const response = await getAsync(`https://api.github.com/repos/${scope}/${name}/releases`, {
 		Accept: "application/vnd.github+json",
-		Authorization: config.GithubAccessToken != "" && "Bearer " + config.GithubAccessToken,
+		Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
 		["X-GitHub-Api-Version"]: "2022-11-28"
 	}, "json")
 
@@ -132,7 +133,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 		}
 
 		var formatedDependencyLink = `${packageLink[0]}@${packageVersion}`
-		var assetPath = `${getPackageFolderPath(realmOverwrite || "shared")}/_Index/${owner.toLowerCase()}_${repo.toLowerCase()}`
+		var assetPath = `${getPackageFolderPath(realmOverwrite || "shared")}/${defaultFolderNames.indexFolder}/${owner.toLowerCase()}_${repo.toLowerCase()}`
 		var assetFolder = assetPath + `@${packageVersion}`
 
 		if (parentDependencies && !parentDependencies[formatedDependencyLink])
@@ -145,7 +146,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 			const release = await getAsync(`https://api.github.com/repos/${owner}/${repo}/releases/${tag == "latest" && tag || `tags/${tag}`}`, {
 				Accept: "application/vnd.github+json",
-				Authorization: config.GithubAccessToken != "" && "Bearer " + config.GithubAccessToken,
+				Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
 				["X-GitHub-Api-Version"]: "2022-11-28"
 			}, "json")
 
@@ -172,7 +173,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 			const asset = await getAsync(release.zipball_url, {
 				Accept: "application/vnd.github+json",
-				Authorization: config.GithubAccessToken != "" && "Bearer " + config.GithubAccessToken,
+				Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
 				["X-GitHub-Api-Version"]: "2022-11-28"
 			})
 
@@ -191,7 +192,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 			writeFileSync(assetZip, asset)
 
 			var zip = new AdmZip(assetZip)
-			zip.extractAllTo(resolve(assetUnzip), true)
+			zip.extractAllTo(path.resolve(assetUnzip), true)
 
 			let assetFile = assetFolder + `/${repo.toLowerCase()}`
 
@@ -200,7 +201,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 			const dirContent = readdirSync(assetUnzip)
 
 			for (const i in dirContent) {
-				await renameFile(resolve(assetUnzip, dirContent[i]), assetFile)
+				await renameFile(path.resolve(assetUnzip, dirContent[i]), assetFile)
 			}
 
 			await rimraf(assetZip)
@@ -270,7 +271,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 			// update realm
 			if (!realmOverwrite && tree[formatedDependencyLink].package.realm != "shared") {
-				assetPath = `${getPackageFolderPath(tree[formatedDependencyLink].package.realm)}/_Index`
+				assetPath = `${getPackageFolderPath(tree[formatedDependencyLink].package.realm)}/${defaultFolderNames.indexFolder}`
 
 				if (!existsSync(assetPath))
 					mkdirSync(assetPath, { recursive: true })
@@ -307,7 +308,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 			debugLog(`Package ${green(formatedDependencyLink)} already exists`)
 		}
 	} catch (err) {
-		downloadStats.failed += 1
+		downloadStats.fail += 1
 		console.error(red("Failed to download github package"), green(dependencyLink) + red(":"), yellow(err))
 	}
 }
@@ -328,7 +329,7 @@ export async function githubDeepDependency(alias, dependencyLink, tree, parentDe
 		if (!result.manifestFile)
 			return
 
-		const downloadManifestDependencies = (await import("../manifest.js")).downloadManifestDependencies
+		const downloadManifestDependencies = (await import("../manifest")).downloadManifestDependencies
 		await downloadManifestDependencies(result.manifestFile, tree, tree[result.packageLink].dependencies)
 	} catch (err) {
 		console.error(red("Failed to check github package dependencies"), green(dependencyLink) + red(":"), yellow(err))

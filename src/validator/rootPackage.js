@@ -1,4 +1,4 @@
-import { yellow } from "../output/colors.js"
+import { yellow } from "../output/colors"
 
 /**
  * @param {Object} manifestData
