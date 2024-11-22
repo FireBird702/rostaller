@@ -1,9 +1,9 @@
 import { existsSync, writeFileSync } from "fs"
-import { config, defaultFolderNames, mainPath, projectJsonName, sourcemapName } from "./configs/mainConfig"
+import { config, defaultFolderNames, mainPath, tempFileNames } from "./configs/mainConfig"
 import { rootManifestConfig } from "./configs/rootManifestConfig"
-import { magenta, yellow } from "./output/colors"
+import { magenta } from "./output/colors"
 import { debugLog } from "./output/output"
-import { createProjectJsonFile } from "./createProjectJsonFile"
+import { createTempProjectJsonFile } from "./tempProjectFileCreator"
 import { getPackageFolderPath } from "./packageFolderPath"
 import { execSync } from "child_process"
 import { rimraf } from "rimraf"
@@ -40,42 +40,14 @@ async function createLuauDependencyFile(realm, packageAlias, packageData, parent
 	if (packageData.realm == parentPackage.realm)
 		moduleData = `return require(script.Parent.Parent["${fullName}"]["${shortName}"])\n`
 	else if (packageData.realm == "shared" && (parentPackage.realm == "server" || parentPackage.realm == "dev")) {
+		// server or dev dependency is depending on a shared dependency
+
 		const sharedPackages = rootManifestConfig.sharedPackages
-
-		if (!sharedPackages) {
-			console.error(yellow(`
-			A server or dev dependency is depending on a shared dependency.
-			To link these packages correctly you must declare where shared
-			packages are placed in the roblox datamodel.
-
-			This typically looks like:
-
-			[place]
-			shared-packages = "game.ReplicatedStorage.Packages"
-			`).replace(/\t/g, ''))
-
-			process.exit(1)
-		}
-
 		moduleData = `return require(${sharedPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
 	} else if (packageData.realm == "server" && parentPackage.realm == "dev") {
+		// dev dependency is depending on a server dependency
+
 		const serverPackages = rootManifestConfig.serverPackages
-
-		if (!serverPackages) {
-			console.error(yellow(`
-			A dev dependency is depending on a server dependency.
-			To link these packages correctly you must declare where server
-			packages are placed in the roblox datamodel.
-
-			This typically looks like:
-
-			[place]
-			server-packages = "game.ServerScriptService.Packages"
-			`).replace(/\t/g, ''))
-
-			process.exit(1)
-		}
-
 		moduleData = `return require(${serverPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
 	} else {
 		throw `${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.realm}" realm cannot access ${packageAlias} (${fullName}) in "${packageData.realm}" realm`
@@ -100,37 +72,37 @@ export async function createLuauFiles(map) {
 
 	process.chdir(mainPath)
 
-	debugLog(magenta("Creating project.json file ...", true))
-	createProjectJsonFile(map)
+	debugLog(magenta(`Creating ${tempFileNames.projectJson} file ...`, true))
+	createTempProjectJsonFile(map)
 
 	var stdio
 
 	if (!config.debug)
 		stdio = "ignore"
 
-	debugLog(magenta("Creating sourcemap file ...", true))
-	execSync(`${config.sourcemapGenerator} sourcemap ${projectJsonName} --output ${sourcemapName}`, { stdio: stdio })
+	debugLog(magenta(`Creating ${tempFileNames.sourcemap} file ...`, true))
+	execSync(`${config.sourcemapGenerator} sourcemap ${tempFileNames.projectJson} --output ${tempFileNames.sourcemap}`, { stdio: stdio })
 
 	debugLog(magenta("Adding types to .luau files ...", true))
 
 	try {
 		if (existsSync(getPackageFolderPath("shared")))
-			await addon.generate_types(sourcemapName, `${rootManifestConfig.sharedPackagesFolder}/`)
+			await addon.generate_types(tempFileNames.sourcemap, `${rootManifestConfig.sharedPackagesFolder}/`)
 	} catch (err) { }
 
 	try {
 		if (existsSync(getPackageFolderPath("server")))
-			await addon.generate_types(sourcemapName, `${rootManifestConfig.serverPackagesFolder}/`)
+			await addon.generate_types(tempFileNames.sourcemap, `${rootManifestConfig.serverPackagesFolder}/`)
 	} catch (err) { }
 
 	try {
 		if (existsSync(getPackageFolderPath("dev")))
-			await addon.generate_types(sourcemapName, `${rootManifestConfig.devPackagesFolder}/`)
+			await addon.generate_types(tempFileNames.sourcemap, `${rootManifestConfig.devPackagesFolder}/`)
 	} catch (err) { }
 
-	debugLog(magenta("Removing project.json file ...", true))
-	await rimraf(projectJsonName)
+	debugLog(magenta(`Removing ${tempFileNames.projectJson} file ...`, true))
+	await rimraf(tempFileNames.projectJson)
 
-	debugLog(magenta("Removing sourcemap file ...", true))
-	await rimraf(sourcemapName)
+	debugLog(magenta(`Removing ${tempFileNames.sourcemap} file ...`, true))
+	await rimraf(tempFileNames.sourcemap)
 }

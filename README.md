@@ -105,11 +105,9 @@ TestEZ = "wally#roblox/testez@0.4.1"
 [place]
 # This is used to specify where packages are located in the Roblox datamodel.
 
-# It is required if server or dev dependency is depending on a shared dependency.
 shared-packages = "game.ReplicatedStorage.Packages"
-
-# It is required if dev dependency is depending on a server dependency.
-server-packages = "game.ServerScriptService.Packages"
+server-packages = "game.ServerScriptService.ServerPackages"
+dev-packages = "game.ReplicatedStorage.DevPackages"
 
 [config]
 # This can be used to overwrite realm folder names.

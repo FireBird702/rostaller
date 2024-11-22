@@ -5,61 +5,85 @@ on:
     types: [published]
 
 jobs:
-  release-zip:
-    runs-on: ubuntu-latest
+  release:
+      permissions:
+        contents: write
 
-    permissions:
-      contents: write
+      strategy:
+        matrix:
+          include:
+            - os: windows-latest
+              artifact-name: rostaller-windows-x64
+              cargo-target: x86_64-pc-windows-msvc
+              pkg-target: latest-win
+            - os: ubuntu-latest
+              artifact-name: rostaller-linux-x64
+              cargo-target: x86_64-unknown-linux-gnu
+              pkg-target: latest-linux
+            - os: macos-latest
+              artifact-name: rostaller-macos-x64
+              cargo-target: x86_64-apple-darwin
+              pkg-target: latest-macos
+            - os: macos-latest
+              artifact-name: rostaller-macos-arm64
+              cargo-target: x86_64-apple-darwin
+              pkg-target: latest-macos-arm64
 
-    steps:
-    - name: Download repository
-      uses: actions/checkout@v4
+      name: Build (${{ matrix.artifact-name }})
+      runs-on: ${{ matrix.os }}
+      steps:
+        - name: Download Repository
+          uses: actions/checkout@v4
 
-    - name: Install Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: "22"
+        - name: Install Node
+          uses: actions/setup-node@v4
+          with:
+            node-version: "22"
 
-    - name: Install dependencies
-      run: |
-        cargo install cross --git https://github.com/cross-rs/cross
-        npm install
+        - name: Install Rust
+          uses: dtolnay/rust-toolchain@stable
+          with:
+            targets: ${{ matrix.cargo-target }}
 
-    - name: Compile and build
-      run: |
-        npm run cross
+        - name: Install Dependencies
+          run: |
+            npm install
 
-    - name: Get release
-      id: get_release
-      uses: joutvhu/get-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        - name: Build
+          run: |
+            npm run build
+            npm run run-esbuild
+            ./node_modules/.bin/pkg --no-bytecode --public --targets ${{ matrix.pkg-target }} --public-packages '*' --out-path bin rostaller.js
 
-    - name: Zip
-      run: |
-        cd bin
-        mv rostaller-win-x64.exe rostaller.exe
-        zip rostaller-${{ steps.get_release.outputs.tag_name }}-windows-x64.zip rostaller.exe ../LICENSE
-        mv rostaller-macos-x64 rostaller
-        chmod +x rostaller
-        zip rostaller-${{ steps.get_release.outputs.tag_name }}-macos-x64.zip rostaller ../LICENSE
-        mv rostaller-macos-arm64 rostaller
-        chmod +x rostaller
-        zip rostaller-${{ steps.get_release.outputs.tag_name }}-macos-arm64.zip rostaller ../LICENSE
-        mv rostaller-linux-x64 rostaller
-        chmod +x rostaller
-        zip rostaller-${{ steps.get_release.outputs.tag_name }}-linux-x64.zip rostaller ../LICENSE
-        mv rostaller-linux-arm64 rostaller
-        chmod +x rostaller
-        zip rostaller-${{ steps.get_release.outputs.tag_name }}-linux-arm64.zip rostaller ../LICENSE
+        - name: Get Release
+          id: get_release
+          uses: joutvhu/get-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload
-      uses: softprops/action-gh-release@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        files: |
-          bin/rostaller-${{ steps.get_release.outputs.tag_name }}-windows-x64.zip
-          bin/rostaller-${{ steps.get_release.outputs.tag_name }}-macos-x64.zip
-          bin/rostaller-${{ steps.get_release.outputs.tag_name }}-macos-arm64.zip
-          bin/rostaller-${{ steps.get_release.outputs.tag_name }}-linux-x64.zip
-          bin/rostaller-${{ steps.get_release.outputs.tag_name }}-linux-arm64.zip
+        - name: Setup Archive
+          shell: bash
+          run: |
+            if [ "${{ matrix.artifact-name }}" = "rostaller-windows-x64" ]; then
+              cd bin
+              7z a ${{ matrix.artifact-name }}.zip rostaller.exe ../LICENSE
+            elif [ "${{ matrix.artifact-name }}" = "rostaller-macos-x64" ]; then
+              cd bin
+              chmod +x rostaller
+              zip ${{ matrix.artifact-name }}.zip rostaller ../LICENSE
+            elif [ "${{ matrix.artifact-name }}" = "rostaller-macos-arm64" ]; then
+              cd bin
+              chmod +x rostaller
+              zip ${{ matrix.artifact-name }}.zip rostaller ../LICENSE
+            elif [ "${{ matrix.artifact-name }}" = "rostaller-linux-x64" ]; then
+              cd bin
+              chmod +x rostaller
+              zip ${{ matrix.artifact-name }}.zip rostaller ../LICENSE
+            fi
+
+        - name: Upload
+          uses: softprops/action-gh-release@v2
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            files: |
+              bin/${{ matrix.artifact-name }}.zip

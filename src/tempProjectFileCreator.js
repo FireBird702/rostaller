@@ -1,5 +1,5 @@
 import { writeFileSync } from "fs"
-import { projectJsonName } from "./configs/mainConfig"
+import { tempFileNames } from "./configs/mainConfig"
 import { rootManifestConfig } from "./configs/rootManifestConfig"
 
 function createJsonPath(fileData, packagesPathString, packagesFolder) {
@@ -23,7 +23,7 @@ function createJsonPath(fileData, packagesPathString, packagesFolder) {
 	}
 }
 
-export function createProjectJsonFile(map) {
+export function createTempProjectJsonFile(map) {
 	var packageTypes = {
 		sharedPackages: false,
 		serverPackages: false,
@@ -60,7 +60,7 @@ export function createProjectJsonFile(map) {
 		createJsonPath(fileData, rootManifestConfig.serverPackages, rootManifestConfig.serverPackagesFolder)
 
 	if (packageTypes.devPackages)
-		createJsonPath(fileData, "game.ReplicatedStorage.DevPackages", rootManifestConfig.devPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.devPackages, rootManifestConfig.devPackagesFolder)
 
-	writeFileSync(projectJsonName, JSON.stringify(fileData, null, "\t"))
+	writeFileSync(tempFileNames.projectJson, JSON.stringify(fileData, null, "\t"))
 }

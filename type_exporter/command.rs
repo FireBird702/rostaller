@@ -202,7 +202,6 @@ pub fn run(sourcemap: String, packages_folder: String) -> Result<()> {
         if let Ok(file_type) = entry.file_type() {
             if file_type.is_dir() {
                 // Check types in index folder
-
                 match handle_index_directory(&entry.path(), &sourcemap) {
                     Ok(index_success) => success &= index_success,
                     Err(err) => {

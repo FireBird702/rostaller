@@ -5,6 +5,7 @@ export const rootManifestConfig = {
 	serverPackagesFolder: defaultFolderNames.serverPackagesFolder,
 	devPackagesFolder: defaultFolderNames.devPackagesFolder,
 
-	sharedPackages: null, // used for server and dev dependencies
-	serverPackages: null, // used for dev dependencies
+	sharedPackages: null, // used for server and dev dependencies and for sourcemap
+	serverPackages: null, // used for dev dependencies and for sourcemap
+	devPackages: null, // used for sourcemap
 }
