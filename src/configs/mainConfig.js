@@ -23,7 +23,7 @@ export const tempFileNames = {
 }
 
 export const defaultFolderNames = {
-	indexFolder: "_index",
+	indexFolder: "_Index",
 
 	sharedPackagesFolder: "Packages",
 	serverPackagesFolder: "ServerPackages",
