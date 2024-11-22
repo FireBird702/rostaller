@@ -6,7 +6,7 @@ import { validateToml } from "./validator/validator"
 import { githubDeepDependency, githubDependency } from "./dependencies/githubDependency"
 import { githubBranchDeepDependency, githubBranchDependency } from "./dependencies/githubBranchDependency"
 import { wallyDeepDependency, wallyDependency } from "./dependencies/wallyDependency"
-import { cyan, green } from "./output/colors"
+import { cyan, green, yellow } from "./output/colors"
 import { debugLog } from "./output/output"
 import { Queue } from "async-await-queue"
 
@@ -71,12 +71,32 @@ export async function getManifestData(manifestFile, isRoot) {
 }
 
 export function setConfigFromRootManifest(manifestData) {
-	if (manifestData.place) {
-		if (manifestData.place["shared-packages"])
-			rootManifestConfig.sharedPackages = manifestData.place["shared-packages"]
+	var allOk = true
 
-		if (manifestData.place["server-packages"])
-			rootManifestConfig.serverPackages = manifestData.place["server-packages"]
+	if (manifestData.place) {
+		rootManifestConfig.sharedPackages = manifestData.place["shared-packages"]
+		rootManifestConfig.serverPackages = manifestData.place["server-packages"]
+		rootManifestConfig.devPackages = manifestData.place["dev-packages"]
+
+		if (!manifestData.place["shared-packages"] || !manifestData.place["server-packages"] || !manifestData.place["dev-packages"])
+			allOk = false
+	} else
+		allOk = false
+
+	if (!allOk) {
+		console.error(yellow(`
+		To link packages correctly you must declare where each
+		packages are placed in the Roblox DataModel.
+
+		This typically looks like:
+
+		[place]
+		shared-packages = "game.ReplicatedStorage.Packages"
+		server-packages = "game.ServerScriptService.ServerPackages"
+		dev-packages = "game.ReplicatedStorage.DevPackages"
+		`).replace(/\t/g, ''))
+
+		process.exit(1)
 	}
 
 	if (manifestData.config) {

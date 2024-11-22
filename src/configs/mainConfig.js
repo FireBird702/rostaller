@@ -5,6 +5,31 @@ import { red } from "../output/colors"
 import toml from "@iarna/toml"
 
 const installDir = path.resolve(os.homedir(), ".rostaller")
+
+export const downloadStats = { fail: 0, success: 0 }
+
+export const lockFileName = "rostaller.lock"
+
+export const defaultProjectJsonName = "default.project.json"
+
+export const manifestFileNames = {
+	rostallerManifest: "rostaller.toml",
+	wallyManifest: "wally.toml",
+}
+
+export const tempFileNames = {
+	projectJson: ".temp-rostaller.project.json",
+	sourcemap: ".temp-rostaller.sourcemap.json",
+}
+
+export const defaultFolderNames = {
+	indexFolder: "_index",
+
+	sharedPackagesFolder: "Packages",
+	serverPackagesFolder: "ServerPackages",
+	devPackagesFolder: "DevPackages",
+}
+
 const configFileName = "config.toml"
 
 export const configPath = path.resolve(installDir, configFileName)
@@ -39,26 +64,4 @@ try {
 } catch (err) {
 	console.error(red(err))
 	process.exit(-1)
-}
-
-export const downloadStats = { fail: 0, success: 0 }
-
-export const projectJsonName = ".temp-rostaller.project.json"
-export const sourcemapName = ".temp-rostaller.sourcemap.json"
-
-export const lockFileName = "rostaller.lock"
-
-export const manifestFileNames = {
-	rostallerManifest: "rostaller.toml",
-	wallyManifest: "wally.toml",
-}
-
-export const defaultProjectJsonName = "default.project.json"
-
-export const defaultFolderNames = {
-	indexFolder: "_index",
-
-	sharedPackagesFolder: "packages",
-	serverPackagesFolder: "serverPackages",
-	devPackagesFolder: "devPackages",
 }

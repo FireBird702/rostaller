@@ -10,6 +10,11 @@ export async function init() {
 		realm = "shared"
 
 		[dependencies]
+
+		[place]
+		shared-packages = "game.ReplicatedStorage.Packages"
+		server-packages = "game.ServerScriptService.ServerPackages"
+		dev-packages = "game.ReplicatedStorage.DevPackages"
 		`.replace(/\t/g, '').slice(1)
 
 		const filePath = `${mainPath}/${manifestFileNames.rostallerManifest}`

@@ -23,8 +23,6 @@ export async function installFromLock() {
 
 		const lockFileData = validateToml(undefined, lockFilePath, readFileSync(lockFilePath))
 
-		console.log(lockFileData)
-
 		debugLog(magenta("Clearing package directories ...", true))
 		await rimraf(getPackageFolderPath("shared")) // clear previous packages
 		await rimraf(getPackageFolderPath("server")) // clear previous packages
