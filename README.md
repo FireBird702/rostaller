@@ -112,7 +112,7 @@ dev-packages = "game.ReplicatedStorage.DevPackages"
 [config]
 # This can be used to overwrite realm folder names.
 
-shared-packages = "packages",
-server-packages = "serverPackages",
-dev-packages = "devPackages",
+shared-packages = "packages"
+server-packages = "serverPackages"
+dev-packages = "devPackages"
 ```
