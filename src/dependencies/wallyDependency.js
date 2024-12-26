@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 
 import { red, yellow, green, cyan } from "../output/colors"
 import { validateJson } from "../validator/validator"
 import { getAsync } from "../httpGet"
-import { config, defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames } from "../configs/mainConfig"
+import { defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames, auth } from "../configs/mainConfig"
 import { debugLog } from "../output/output"
 import { getPackageFolderPath } from "../packageFolderPath"
 import { clean, rcompare, maxSatisfying } from "semver"
@@ -68,7 +68,7 @@ async function getMetadata(scope, name) {
 		return metadataCache[`${scope}/${name}`]
 
 	const response = await getAsync(`https://api.wally.run/v1/package-metadata/${scope}/${name}`, {
-		Authorization: config.auth.wallyAccessToken != "" && "Bearer " + config.auth.wallyAccessToken,
+		Authorization: auth.wally != "" && "Bearer " + auth.wally,
 		["Wally-Version"]: "0.3.2"
 	}, "json")
 
@@ -144,7 +144,7 @@ export async function wallyDependency(alias, dependencyLink, tree, parentDepende
 			debugLog(`Downloading ${green(formatedDependencyLink)} ...`)
 
 			const asset = await getAsync(`https://api.wally.run/v1/package-contents/${owner}/${repo}/${packageVersion}`, {
-				Authorization: config.auth.wallyAccessToken != "" && "Bearer " + config.auth.wallyAccessToken,
+				Authorization: auth.wally != "" && "Bearer " + auth.wally,
 				["Wally-Version"]: "0.3.2",
 			}, "wally")
 

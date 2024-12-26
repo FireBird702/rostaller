@@ -49,6 +49,12 @@ Install all packages from lockfile.
 rostaller install --locked
 ```
 
+Authenticate with an artifact provider, such as GitHub.
+
+```sh
+rostaller authenticate
+```
+
 Open rostaller config.
 
 ```sh
@@ -58,6 +64,7 @@ rostaller config
 ## Manifest Format
 
 [toml]: https://toml.io/
+
 The package manifest file describes a package and all of the packages it depends on. Package manifests are written in [TOML][toml] and stored in a file named `rostaller.toml`.
 
 Manifest files define all necessary information about a package.

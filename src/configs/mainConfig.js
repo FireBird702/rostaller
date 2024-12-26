@@ -4,13 +4,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs"
 import { red } from "../output/colors"
 import toml from "@iarna/toml"
 
-const installDir = path.resolve(os.homedir(), ".rostaller")
-
 export const downloadStats = { fail: 0, success: 0 }
 
-export const lockFileName = "rostaller.lock"
-
 export const defaultProjectJsonName = "default.project.json"
+export const lockFileName = "rostaller.lock"
 
 export const manifestFileNames = {
 	rostallerManifest: "rostaller.toml",
@@ -31,36 +28,46 @@ export const defaultFolderNames = {
 }
 
 const configFileName = "config.toml"
+const authFileName = "auth.toml"
+
+const installDir = path.resolve(os.homedir(), ".rostaller")
 
 export const configPath = path.resolve(installDir, configFileName)
+export const authPath = path.resolve(installDir, authFileName)
+
 export const mainPath = process.cwd().replace(/\\/g, "/")
 
 export const config = {
-	auth: {
-		githubAccessToken: "",
-		wallyAccessToken: "",
-	},
-
 	debug: false,
 	maxConcurrentDownloads: 10,
 	sourcemapGenerator: "rojo",
 }
 
-try {
-	mkdirSync(installDir, { recursive: true })
+export const auth = {
+	github: "",
+	wally: "",
+}
 
-	if (existsSync(configPath)) {
+function reconcileAndSave(path, data) {
+	if (existsSync(path)) {
 		try {
-			const savedConfig = toml.parse(readFileSync(configPath))
+			const savedData = toml.parse(readFileSync(path))
 
-			for (const key in savedConfig) {
-				if (key in config)
-					config[key] = savedConfig[key]
+			for (const key in savedData) {
+				if (key in data)
+					data[key] = savedData[key]
 			}
 		} catch (err) { }
 	}
 
-	writeFileSync(configPath, toml.stringify(config))
+	writeFileSync(path, toml.stringify(data))
+}
+
+try {
+	mkdirSync(installDir, { recursive: true })
+
+	reconcileAndSave(configPath, config)
+	reconcileAndSave(authPath, auth)
 } catch (err) {
 	console.error(red(err))
 	process.exit(-1)

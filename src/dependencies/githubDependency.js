@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 
 import { red, yellow, green, cyan } from "../output/colors"
 import { validateJson, validateToml } from "../validator/validator"
 import { getAsync } from "../httpGet"
-import { config, defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames } from "../configs/mainConfig"
+import { defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames, auth } from "../configs/mainConfig"
 import { debugLog } from "../output/output"
 import { renameFile } from "../renameFile"
 import { getPackageFolderPath } from "../packageFolderPath"
@@ -78,7 +78,7 @@ async function getMetadata(scope, name) {
 
 	const response = await getAsync(`https://api.github.com/repos/${scope}/${name}/releases`, {
 		Accept: "application/vnd.github+json",
-		Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
+		Authorization: auth.github != "" && "Bearer " + auth.github,
 		["X-GitHub-Api-Version"]: "2022-11-28"
 	}, "json")
 
@@ -146,7 +146,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 			const release = await getAsync(`https://api.github.com/repos/${owner}/${repo}/releases/${tag == "latest" && tag || `tags/${tag}`}`, {
 				Accept: "application/vnd.github+json",
-				Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
+				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: "2022-11-28"
 			}, "json")
 
@@ -173,7 +173,7 @@ export async function githubDependency(alias, dependencyLink, tree, parentDepend
 
 			const asset = await getAsync(release.zipball_url, {
 				Accept: "application/vnd.github+json",
-				Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
+				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: "2022-11-28"
 			})
 

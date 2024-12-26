@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 
 import { red, yellow, green, cyan } from "../output/colors"
 import { validateJson, validateToml } from "../validator/validator"
 import { getAsync } from "../httpGet"
-import { config, defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames } from "../configs/mainConfig"
+import { defaultProjectJsonName, downloadStats, manifestFileNames, defaultFolderNames, auth } from "../configs/mainConfig"
 import { debugLog } from "../output/output"
 import { renameFile } from "../renameFile"
 import { getPackageFolderPath } from "../packageFolderPath"
@@ -39,7 +39,7 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 
 			const response = await getAsync(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`, {
 				Accept: "application/vnd.github+json",
-				Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
+				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: "2022-11-28"
 			}, "json")
 
@@ -60,7 +60,7 @@ export async function githubBranchDependency(alias, dependencyLink, tree, parent
 
 			const asset = await getAsync(`https://api.github.com/repos/${owner}/${repo}/zipball/${branch}`, {
 				Accept: "application/vnd.github+json",
-				Authorization: config.auth.githubAccessToken != "" && "Bearer " + config.auth.githubAccessToken,
+				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: "2022-11-28"
 			})
 

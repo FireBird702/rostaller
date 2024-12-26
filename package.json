@@ -1,6 +1,5 @@
 {
 	"name": "rostaller",
-	"version": "1.3.0",
 	"main": "index.node",
 	"type": "module",
 	"scripts": {
