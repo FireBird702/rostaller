@@ -22,6 +22,6 @@
 	"devDependencies": {
 		"@yao-pkg/pkg": "^6.0.0",
 		"cargo-cp-artifact": "^0.1.0",
-		"esbuild": "^0.24.0"
+		"esbuild": "^0.25.0"
 	}
 }
