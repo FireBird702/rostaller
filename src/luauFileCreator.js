@@ -1,72 +1,221 @@
-import { existsSync, writeFileSync } from "fs"
-import { config, defaultFolderNames, mainPath, tempFileNames } from "./configs/mainConfig"
-import { rootManifestConfig } from "./configs/rootManifestConfig"
-import { magenta } from "./output/colors"
-import { debugLog } from "./output/output"
-import { createTempProjectJsonFile } from "./tempProjectFileCreator"
-import { getPackageFolderPath } from "./packageFolderPath"
+import { existsSync, mkdirSync, writeFileSync } from "fs"
+import { config, defaultFolderNames, mainPath, tempFileNames } from "./configs/mainConfig.js"
+import { rootManifestConfig } from "./configs/rootManifestConfig.js"
+import { magenta } from "./output/colors.js"
+import { debugLog } from "./output/output.js"
+import * as packageFolderPaths from "./packageFolderPaths.js"
 import { execSync } from "child_process"
 import { rimraf } from "rimraf"
 
-const addon = require('..')
+const addon = require("..")
 
 /**
- * @param {string} realm
- * @param {string} packageAlias
- * @param {any} packageData
+ * Removes the `init.lua` or `init.luau` file from the lib
+ * @param { string } link
+ * @param { string } lib
  */
-async function createLuauRootFile(realm, packageAlias, packageData) {
-	const fullName = `${packageData.owner.toLowerCase()}_${packageData.name.toLowerCase()}@${packageData.version}`
-	const shortName = packageData.name.toLowerCase()
+function updateLink(link, lib) {
+	for (const path of lib.replace(/\/?init.luau?$/, "").split("/")) {
+		if (path == "")
+			continue
 
-	let moduleData = `return require(script.Parent.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
-	writeFileSync(`${getPackageFolderPath(realm)}/${packageAlias}.luau`, moduleData)
+		link += `.${path.replace(/.luau?$/, "")}`
+	}
+
+	return link
 }
 
 /**
- * @param {string} realm
- * @param {string} packageAlias
- * @param {any} packageData
- * @param {string} packageAlias
- * @param {any} parentPackage
+ *
+ * @param { * } packageData
  */
-async function createLuauDependencyFile(realm, packageAlias, packageData, parentPackageAlias, parentPackage) {
-	const parentPackageFullName = `${parentPackage.owner.toLowerCase()}_${parentPackage.name.toLowerCase()}@${parentPackage.version}`
-	const fullName = `${packageData.owner.toLowerCase()}_${packageData.name.toLowerCase()}@${packageData.version}`
+function getPathName(packageData) {
+	if (packageData.type == "github-rev")
+		return `${packageData.scope.toLowerCase()}_${packageData.name.toLowerCase()}@${packageData.rev}`
+	else
+		return `${packageData.scope.toLowerCase()}_${packageData.name.toLowerCase()}@${packageData.version}`
+}
+
+/**
+ * @param { string } environment
+ * @param { string } packageAlias
+ * @param { * } packageData
+ */
+async function createLuauRootFile(environment, packageAlias, packageData) {
+	const fullName = getPathName(packageData)
 	const shortName = packageData.name.toLowerCase()
 
-	let moduleData
+	let link = `script.Parent.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"]`
 
-	if (packageData.realm == parentPackage.realm)
-		moduleData = `return require(script.Parent.Parent["${fullName}"]["${shortName}"])\n`
-	else if (packageData.realm == "shared" && (parentPackage.realm == "server" || parentPackage.realm == "dev")) {
+	if (packageData.lib)
+		link = updateLink(link, packageData.lib)
+
+	const moduleData = `return require(${link})\n`
+	writeFileSync(`${packageFolderPaths.get(environment)}/${packageAlias}.luau`, moduleData)
+}
+
+/**
+ * @param { string } environment
+ * @param { string } packageAlias
+ * @param { * } packageData
+ * @param { string } packageAlias
+ * @param { * } parentPackage
+ */
+async function createLuauDependencyFile(environment, packageAlias, packageData, parentPackageAlias, parentPackage) {
+	const parentPackageFullName = getPathName(parentPackage)
+	const fullName = getPathName(packageData)
+	const shortName = packageData.name.toLowerCase()
+
+	let path = `${packageFolderPaths.get(environment)}/${defaultFolderNames.indexFolder}/${parentPackageFullName}`
+	let link
+
+	if (packageData.environment == parentPackage.environment)
+		link = `script.Parent.Parent["${fullName}"]["${shortName}"]`
+	else if (packageData.environment == "shared" && (parentPackage.environment == "server" || parentPackage.environment == "dev")) {
 		// server or dev dependency is depending on a shared dependency
 
 		const sharedPackages = rootManifestConfig.sharedPackages
-		moduleData = `return require(${sharedPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
-	} else if (packageData.realm == "server" && parentPackage.realm == "dev") {
+		link = `${sharedPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"]`
+	} else if (packageData.environment == "server" && parentPackage.environment == "dev") {
 		// dev dependency is depending on a server dependency
 
 		const serverPackages = rootManifestConfig.serverPackages
-		moduleData = `return require(${serverPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"])\n`
+		link = `${serverPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"]`
 	} else {
-		throw `${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.realm}" realm cannot access ${packageAlias} (${fullName}) in "${packageData.realm}" realm`
+		throw `${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.environment}" environment cannot access ${packageAlias} (${fullName}) in "${packageData.environment}" environment`
 	}
 
-	writeFileSync(`${getPackageFolderPath(realm)}/${defaultFolderNames.indexFolder}/${parentPackageFullName}/${packageAlias}.luau`, moduleData)
+	if (packageData.lib)
+		link = updateLink(link, packageData.lib)
+
+	const moduleData = `return require(${link})\n`
+	writeFileSync(`${path}/${packageAlias}.luau`, moduleData)
+}
+
+/**
+ * @param { string } environment
+ * @param { string } packageAlias
+ * @param { * } packageData
+ * @param { string } packageAlias
+ * @param { * } parentPackage
+ */
+async function createPesdeLuauDependencyFile(environment, packageAlias, packageData, parentPackageAlias, parentPackage) {
+	const parentPackageFullName = getPathName(parentPackage)
+	const fullName = getPathName(packageData)
+	const shortName = packageData.name.toLowerCase()
+
+	let path = `${packageFolderPaths.get(environment)}/${defaultFolderNames.indexFolder}/${parentPackageFullName}/${parentPackage.name.toLowerCase()}`
+	let link
+
+	if (packageData.environment == parentPackage.environment)
+		link = `script.Parent.Parent.Parent.Parent["${fullName}"]["${shortName}"]`
+	else if (packageData.environment == "shared" && (parentPackage.environment == "server" || parentPackage.environment == "dev")) {
+		// server or dev dependency is depending on a shared dependency
+
+		const sharedPackages = rootManifestConfig.sharedPackages
+		link = `${sharedPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"]`
+	} else if (packageData.environment == "server" && parentPackage.environment == "dev") {
+		// dev dependency is depending on a server dependency
+
+		const serverPackages = rootManifestConfig.serverPackages
+		link = `${serverPackages}.${defaultFolderNames.indexFolder}["${fullName}"]["${shortName}"]`
+	} else {
+		throw `${parentPackageAlias} (${parentPackageFullName}) in "${parentPackage.environment}" environment cannot access ${packageAlias} (${fullName}) in "${packageData.environment}" environment`
+	}
+
+	if (packageData.lib)
+		link = updateLink(link, packageData.lib)
+
+	if (packageData.environment == "server")
+		path += "/roblox_server_packages"
+	else
+		path += "/roblox_packages"
+
+	if (!existsSync(path))
+		mkdirSync(path, { recursive: true })
+
+	const moduleData = `return require(${link})\n`
+	writeFileSync(`${path}/${packageAlias}.luau`, moduleData)
+}
+
+function createJsonPath(fileData, packagesPathString, packagesFolder) {
+	const pathElements = packagesPathString.split(".")
+
+	let path = fileData.tree
+
+	for (const i in pathElements) {
+		if (pathElements[i] == "game" && parseInt(i) == 0)
+			continue
+
+		if (!path[pathElements[i]])
+			path[pathElements[i]] = {}
+
+		if (parseInt(i) + 1 == pathElements.length)
+			path[pathElements[i]] = {
+				$path: packagesFolder
+			}
+
+		path = path[pathElements[i]]
+	}
+}
+
+function createTempProjectJsonFile(map) {
+	let packageTypes = {
+		sharedPackages: false,
+		serverPackages: false,
+		devPackages: false
+	}
+
+	for (const key in map) {
+		const packageData = map[key]
+
+		const environment = packageData.package.environment
+
+		if (environment == "shared")
+			packageTypes.sharedPackages = true
+		else if (environment == "server")
+			packageTypes.serverPackages = true
+		else if (environment == "dev")
+			packageTypes.devPackages = true
+
+		if (packageTypes.sharedPackages && packageTypes.serverPackages && packageTypes.devPackages)
+			break
+	}
+
+	const fileData = {
+		name: "rostaller",
+		tree: {
+			$className: "DataModel",
+		}
+	}
+
+	if (packageTypes.sharedPackages)
+		createJsonPath(fileData, rootManifestConfig.sharedPackages, rootManifestConfig.sharedPackagesFolder)
+
+	if (packageTypes.serverPackages)
+		createJsonPath(fileData, rootManifestConfig.serverPackages, rootManifestConfig.serverPackagesFolder)
+
+	if (packageTypes.devPackages)
+		createJsonPath(fileData, rootManifestConfig.devPackages, rootManifestConfig.devPackagesFolder)
+
+	writeFileSync(tempFileNames.projectJson, JSON.stringify(fileData, null, "\t"))
 }
 
 export async function createLuauFiles(map) {
+	debugLog(magenta("Creating .luau files ...", true))
+
 	for (const rootPackageLink in map) {
 		const packageMetadata = map[rootPackageLink]
 
 		if (packageMetadata.alias)
-			await createLuauRootFile(packageMetadata.package.realm, packageMetadata.alias, packageMetadata.package)
-
+			await createLuauRootFile(packageMetadata.package.environment, packageMetadata.alias, packageMetadata.package)
 		for (const dependencyPackageLink in packageMetadata.dependencies) {
 			const packageData = map[dependencyPackageLink].package
 
-			await createLuauDependencyFile(packageMetadata.package.realm, packageMetadata.dependencies[dependencyPackageLink].alias, packageData, packageMetadata.alias, packageMetadata.package)
+			if (packageMetadata.package.type == "pesde")
+				await createPesdeLuauDependencyFile(packageMetadata.package.environment, packageMetadata.dependencies[dependencyPackageLink].alias, packageData, packageMetadata.alias, packageMetadata.package)
+			else
+				await createLuauDependencyFile(packageMetadata.package.environment, packageMetadata.dependencies[dependencyPackageLink].alias, packageData, packageMetadata.alias, packageMetadata.package)
 		}
 	}
 
@@ -75,7 +224,7 @@ export async function createLuauFiles(map) {
 	debugLog(magenta(`Creating ${tempFileNames.projectJson} file ...`, true))
 	createTempProjectJsonFile(map)
 
-	var stdio
+	let stdio
 
 	if (!config.debug)
 		stdio = "ignore"
@@ -86,18 +235,24 @@ export async function createLuauFiles(map) {
 	debugLog(magenta("Adding types to .luau files ...", true))
 
 	try {
-		if (existsSync(getPackageFolderPath("shared")))
-			await addon.generate_types(tempFileNames.sourcemap, `${rootManifestConfig.sharedPackagesFolder}/`)
+		const packagesPath = packageFolderPaths.get("shared")
+
+		if (existsSync(packagesPath))
+			await addon.generate_types(tempFileNames.sourcemap, `${packagesPath}/`)
 	} catch (err) { }
 
 	try {
-		if (existsSync(getPackageFolderPath("server")))
-			await addon.generate_types(tempFileNames.sourcemap, `${rootManifestConfig.serverPackagesFolder}/`)
+		const packagesPath = packageFolderPaths.get("server")
+
+		if (existsSync(packagesPath))
+			await addon.generate_types(tempFileNames.sourcemap, `${packagesPath}/`)
 	} catch (err) { }
 
 	try {
-		if (existsSync(getPackageFolderPath("dev")))
-			await addon.generate_types(tempFileNames.sourcemap, `${rootManifestConfig.devPackagesFolder}/`)
+		const packagesPath = packageFolderPaths.get("dev")
+
+		if (existsSync(packagesPath))
+			await addon.generate_types(tempFileNames.sourcemap, `${packagesPath}/`)
 	} catch (err) { }
 
 	debugLog(magenta(`Removing ${tempFileNames.projectJson} file ...`, true))

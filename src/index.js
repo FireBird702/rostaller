@@ -1,10 +1,10 @@
 import yargs from "yargs"
-import { config } from "./commands/config"
-import { init } from "./commands/init"
-import { install } from "./commands/install"
-import { installFromLock } from "./commands/installFromLock"
-import { authenticate } from "./commands/authenticate"
-import { version } from "./version"
+import { config } from "./commands/config.js"
+import { init } from "./commands/init.js"
+import { install } from "./commands/install.js"
+import { installFromLock } from "./commands/installFromLock.js"
+import { authenticate } from "./commands/authenticate.js"
+import { version } from "./version.js"
 
 if (!process.pkg) {
 	process.exit()

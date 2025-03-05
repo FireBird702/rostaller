@@ -1,21 +1,25 @@
 import { existsSync, writeFileSync } from "fs"
-import { red, green, magenta, cyan, yellow } from "../output/colors"
-import { mainPath, manifestFileNames } from "../configs/mainConfig"
-import { debugLog } from "../output/output"
+import { red, green, magenta, cyan, yellow } from "../output/colors.js"
+import { mainPath, manifestFileNames } from "../configs/mainConfig.js"
+import { debugLog } from "../output/output.js"
 
 export async function init() {
 	try {
 		const fileData = `
 		[package]
-		realm = "shared"
+		environment = "shared"
+		lib = "src/init.luau"
+		build_files = ["src"]
 
 		[dependencies]
 
+		[dev_dependencies]
+
 		[place]
-		shared-packages = "game.ReplicatedStorage.Packages"
-		server-packages = "game.ServerScriptService.ServerPackages"
-		dev-packages = "game.ReplicatedStorage.DevPackages"
-		`.replace(/\t/g, '').slice(1)
+		shared_packages = "game.ReplicatedStorage.Packages"
+		server_packages = "game.ServerScriptService.ServerPackages"
+		dev_packages = "game.ReplicatedStorage.DevPackages"
+		`.replace(/\t/g, "").slice(1)
 
 		const filePath = `${mainPath}/${manifestFileNames.rostallerManifest}`
 

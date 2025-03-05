@@ -1,11 +1,14 @@
-import { defaultFolderNames } from "./mainConfig"
+import { defaultFolderNames } from "./mainConfig.js"
 
 export const rootManifestConfig = {
 	sharedPackagesFolder: defaultFolderNames.sharedPackagesFolder,
 	serverPackagesFolder: defaultFolderNames.serverPackagesFolder,
 	devPackagesFolder: defaultFolderNames.devPackagesFolder,
 
-	sharedPackages: null, // used for server and dev dependencies and for sourcemap
-	serverPackages: null, // used for dev dependencies and for sourcemap
-	devPackages: null, // used for sourcemap
+	// used for server and dev dependencies and for sourcemap
+	sharedPackages: null,
+	// used for dev dependencies and for sourcemap
+	serverPackages: null,
+	// used for sourcemap
+	devPackages: null,
 }

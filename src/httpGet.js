@@ -1,11 +1,12 @@
 import followRedirects from "follow-redirects"
 
 /**
- * @param {string} url
- * @param {OutgoingHttpHeaders} headers
- * @param {string} responseType
- * @returns {Promise}
+ * @param { string } url
+ * @param { * } headers
+ * @param { "json"? } responseType
+ * @returns { object | Buffer<ArrayBuffer> }
  */
+
 export async function getAsync(url, headers, responseType) {
 	const newHeaders = { "user-agent": "node.js" }
 
@@ -30,9 +31,6 @@ export async function getAsync(url, headers, responseType) {
 					switch (responseType) {
 						case "json":
 							resolve(JSON.parse(buffer.toString()))
-							break
-						case "wally":
-							resolve(buffer)
 							break
 						default:
 							resolve(buffer)

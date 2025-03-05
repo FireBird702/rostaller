@@ -1,9 +1,10 @@
 # rostaller - A simple tool for simple needs
 
-Download packages from [wally][wally] and [github][github]
+Download packages from [wally][wally], [pesde][pesde] and [github][github]
 
-[github]: https://github.com
 [wally]: https://github.com/UpliftGames/wally
+[pesde]: https://github.com/pesde-pkg/pesde
+[github]: https://github.com
 
 * [Installation](#installation)
 * [Commands](#commands)
@@ -73,53 +74,71 @@ Here is an example package manifest, annotated with comments:
 
 ```toml
 [package]
-# Packages belong to a "realm", which helps prevent using code in the wrong context.
+# Packages belong to a "environment", which helps prevent using code in the wrong context.
 #
-# Packages in the "shared" realm can only depend on other "shared" packages.
-# Packages in the "server" realm can only depend on other "shared" or "server" packages.
-# Packages in the "dev" realm can depend on other "dev", "shared" or "server" packages.
+# Packages in the "shared" environment can only depend on other "shared" packages.
+# Packages in the "server" environment can only depend on other "shared" or "server" packages.
+# Packages in the "dev" environment can depend on other "dev", "shared" or "server" packages.
 #
-# In most cases "shared" realm should be used.
-realm = "shared"
+# In most cases "shared" environment should be used.
+environment = "shared"
+# The entry point of the library exported by the package.
+# This file is what will be required when the package is loaded using require.
+lib = "src/init.luau"
+# A list of files that should be synced to Roblox when the package is installed.
+build_files = ["src"]
+
+[wally_indexes]
+# List of wally indexes.
+# If package has [index] not specified, the default index is used.
+default = "https://github.com/UpliftGames/wally-index"
+
+[pesde_indexes]
+# List of pesde indexes.
+# If package has [index] not specified, the default index is used.
+default = "https://github.com/pesde-pkg/index"
 
 [dependencies]
-# rostaller will try to automatically pick package realm based on it's .toml file,
-# if it fails, "shared" realm will be picked.
-#
-# The name on the left is an alias. It defines what name we would like to use to refer to this package.
-# The value on the right will usually be:
-#   wally#[scope]/[name]@[semver_version] for wally packages.
-#
-#   github#[owner]/[repository]@[semver_version] for github packages. If no semver_version specified then latest tag will be choosen.
-#
-#   github-branch#[owner]/[repository]@[branch] for github branches when no releases are available.
-#
+# The name on the left is an alias.
+# It defines what name we would like to use to refer to this package.
+
+# Wally package template.
+WallyPackage = { wally = "scope/name", version = "x.x.x" }
+
+# Pesde package template.
+PesdePackage = { pesde = "scope/name", version = "x.x.x" }
+
+# Github release package template.
+# Use only when published releases are available.
+# Latest tag will be used if [version] is not specified.
+GithubPackage = { github = "owner/name", version = "x.x.x" }
+
+# Github revision package template.
+# Use only when no published releases are available.
+# [rev] can be a branch name or commit hash.
+GithubRevPackage = { github-rev = "owner/name", rev = "main" }
+
 # Versions are SemVer version requirements. The default behavior matches
 # Cargo, or npm with the `^` version specifier.
 
-[shared-dependencies-overwrite]
-# Shared dependencies can be required here as shown above.
-# Overwrites package realm to "shared", should be used for github branches.
+# rostaller will try to automatically pick package environment,
+# if it fails, "shared" environment will be picked.
 
-[server-dependencies-overwrite]
-# Server dependencies can be required here as shown above.
-# Overwrites package realm to "server", should be used for github branches.
-
-[dev-dependencies]
+[dev_dependencies]
 # Dev dependencies that are only needed during development.
-TestEZ = "wally#roblox/testez@0.4.1"
+TestEZ = { wally = "roblox/testez", version = "0.4.1" }
+
+[shared_dependencies_overwrite]
+# Shared dependencies can be required here as shown above.
+# Overwrites package environment to "shared", should be used for github revisions.
+
+[server_dependencies_overwrite]
+# Server dependencies can be required here as shown above.
+# Overwrites package environment to "server", should be used for github revisions.
 
 [place]
 # This is used to specify where packages are located in the Roblox datamodel.
-
-shared-packages = "game.ReplicatedStorage.Packages"
-server-packages = "game.ServerScriptService.ServerPackages"
-dev-packages = "game.ReplicatedStorage.DevPackages"
-
-[config]
-# This can be used to overwrite realm folder names.
-
-shared-packages = "packages"
-server-packages = "serverPackages"
-dev-packages = "devPackages"
+shared_packages = "game.ReplicatedStorage.Packages"
+server_packages = "game.ServerScriptService.ServerPackages"
+dev_packages = "game.ReplicatedStorage.DevPackages"
 ```

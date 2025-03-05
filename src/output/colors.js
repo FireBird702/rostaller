@@ -8,43 +8,43 @@ const colors = {
 }
 
 /**
- * @param {string} s
- * @returns {string}
+ * @param { string } s
+ * @returns { string }
  */
 export function red(s) {
 	return colors.red + s + colors.reset
 }
 
 /**
- * @param {string} s
- * @returns {string}
+ * @param { string } s
+ * @returns { string }
  */
 export function yellow(s) {
 	return colors.yellow + s + colors.reset
 }
 
 /**
- * @param {string} s
- * @param {boolean?} hideQuotes
- * @returns {string}
+ * @param { string } s
+ * @param { boolean? } hideQuotes
+ * @returns { string }
  */
 export function green(s, hideQuotes) {
 	return hideQuotes && (colors.green + s + colors.reset) || (`${colors.green}"${s}"${colors.reset}`)
 }
 
 /**
- * @param {string} s
- * @param {boolean?} hideQuotes
- * @returns {string}
+ * @param { string } s
+ * @param { boolean? } hideQuotes
+ * @returns { string }
  */
 export function magenta(s, hideQuotes) {
 	return hideQuotes && (colors.magenta + s + colors.reset) || (`${colors.magenta}"${s}"${colors.reset}`)
 }
 
 /**
- * @param {string} s
- * @param {boolean?} hideBrackets
- * @returns {string}
+ * @param { string } s
+ * @param { boolean? } hideBrackets
+ * @returns { string }
  */
 export function cyan(s, hideBrackets) {
 	if (process.platform == "win32") {

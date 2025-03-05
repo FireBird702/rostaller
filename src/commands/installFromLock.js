@@ -1,75 +1,82 @@
 import { existsSync, readFileSync } from "fs"
-import { red, green, magenta, yellow } from "../output/colors"
-import { mainPath, downloadStats, lockFileName, manifestFileNames } from "../configs/mainConfig"
-import { downloadLockDependencies } from "../manifest"
-import { createLuauFiles } from "../luauFileCreator"
-import { debugLog } from "../output/output"
-import { validateToml } from "../validator/validator"
-import { getPackageFolderPath } from "../packageFolderPath"
+import { red, green, magenta, yellow, cyan } from "../output/colors.js"
+import { mainPath, downloadStats, lockFileName, manifestFileNames } from "../configs/mainConfig.js"
+import { downloadLockDependencies } from "../universal/manifest.js"
+import { createLuauFiles } from "../luauFileCreator.js"
+import { debugLog } from "../output/output.js"
+import { validateToml } from "../validator/validator.js"
+import * as packageFolderPaths from "../packageFolderPaths.js"
 import { clean } from "semver"
 import { rimraf } from "rimraf"
 
 export async function installFromLock() {
 	try {
+		const startTime = Date.now()
+
 		if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
 			throw `[${manifestFileNames.rostallerManifest}] does not exist`
 
 		debugLog(magenta(`Checking ${lockFileName} file ...`, true))
+
 		const lockFilePath = `${mainPath}/${lockFileName}`
 
 		if (!existsSync(lockFilePath)) {
 			throw `Unable to locate [${lockFileName}] file`
 		}
 
-		const lockFileData = validateToml(undefined, lockFilePath, readFileSync(lockFilePath))
+		console.log(`Checking ${cyan(lockFileName, true)} file`)
+		const lockFileData = validateToml(lockFilePath, readFileSync(lockFilePath))
 
 		debugLog(magenta("Clearing package directories ...", true))
-		await rimraf(getPackageFolderPath("shared")) // clear previous packages
-		await rimraf(getPackageFolderPath("server")) // clear previous packages
-		await rimraf(getPackageFolderPath("dev")) // clear previous packages
+		await rimraf(packageFolderPaths.get("shared")) // clear previous packages
+		await rimraf(packageFolderPaths.get("server")) // clear previous packages
+		await rimraf(packageFolderPaths.get("dev")) // clear previous packages
 		console.log("Cleared package directories")
 
-		var mapTree = {}
+		let mapTree = {}
 
-		debugLog(magenta(`Downloading dependencies from ${lockFileName} file ...`, true))
 		await downloadLockDependencies(lockFileData, mapTree)
 
+		/**
+		 * Cleans version from leading/trailing whitespace, removes '=v' prefix
+		 * @param { string } packageLink
+		 * @returns
+		 */
 		function formatLockPackageLink(packageLink) {
-			const packageTypeSplit = packageLink.split("#")
+			const type = packageLink.split("#")[0]
 
-			if (packageTypeSplit[0] == "github-branch") {
-				return packageTypeSplit[1]
-			}
+			if (type == "github-rev")
+				return packageLink
 
-			const packageLinkSplit = packageTypeSplit[1].split("@")
-
-			if (packageLinkSplit[1] == undefined) {
-				return packageTypeSplit[1]
-			}
-
-			const formatedPackageLink = `${packageLinkSplit[0]}@${clean(packageLinkSplit[1], { loose: true })}`
-			return formatedPackageLink
+			const version = packageLink.split("@")[1]
+			return `${packageLink.split("@")[0]}@${clean(version, { loose: true })}`
 		}
 
+		// add dependencies to downloaded packages
 		for (const packageLink in lockFileData) {
 			const formatedPackageLink = formatLockPackageLink(packageLink)
 
-			for (const link in lockFileData[packageLink].dependencies) {
-				const formatedLink = formatLockPackageLink(link)
+			if (!mapTree[formatedPackageLink])
+				throw `Could not find ${formatedPackageLink} in downloaded packages`
 
-				mapTree[formatedPackageLink].dependencies[formatedLink] = lockFileData[packageLink].dependencies[link]
+			for (const dependencyPackageLink in lockFileData[packageLink].dependencies) {
+				const dependency = lockFileData[packageLink].dependencies[dependencyPackageLink]
+				const formatedLink = formatLockPackageLink(dependencyPackageLink)
+
+				mapTree[formatedPackageLink].dependencies[formatedLink] = dependency
 			}
 		}
 
-		debugLog(magenta("Creating .luau files ...", true))
 		await createLuauFiles(mapTree)
 
-		var finalMessage = `[${green("INFO", true)}] Downloaded ${downloadStats.success} packages`
+		let finalMessage = `[${green("INFO", true)}] Downloaded ${downloadStats.success} packages`
 
-		if (!downloadStats.fail == 0)
+		if (downloadStats.fail != 0)
 			finalMessage += `, ${downloadStats.fail} failed`
 
 		console.log(finalMessage)
+
+		debugLog(magenta(`Time passed: ${(Date.now() - startTime) / 1000} seconds`, true))
 	} catch (err) {
 		console.error(`${red(`Failed to install packages:`)} ${yellow(err)}`)
 		process.exit(1)

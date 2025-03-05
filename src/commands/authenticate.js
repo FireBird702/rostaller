@@ -1,6 +1,6 @@
 import { writeFileSync } from "fs"
-import { auth, authPath } from "../configs/mainConfig"
-import { green, red, yellow } from "../output/colors"
+import { auth, authPath } from "../configs/mainConfig.js"
+import { green, red, yellow } from "../output/colors.js"
 import toml from "@iarna/toml"
 
 export async function authenticate(args) {

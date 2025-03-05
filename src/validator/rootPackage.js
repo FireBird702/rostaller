@@ -1,61 +1,64 @@
-import { yellow } from "../output/colors"
+import { yellow } from "../output/colors.js"
 
 /**
- * @param {Object} manifestData
- * @returns {boolean}
+ * @param { object } dependency
+ * @returns { boolean } isValid
  */
-function scan(manifestData) {
-	let failed = false
-
-	if (!manifestData.package)
-		failed = true
-
-	if (manifestData.dependencies) {
-		for (const dependency in manifestData.dependencies) {
-			if (typeof manifestData.dependencies[dependency] != "string") {
-				console.error(yellow(dependency + " dependency must be a string"))
-				failed = true
-				break
-			}
-		}
+function isValidDependency(dependency) {
+	if (typeof dependency != "object") {
+		console.error(yellow(dependency + " dependency must be a table"))
+		return false
 	}
 
-	if (manifestData["shared-dependencies-overwrite"]) {
-		for (const dependency in manifestData["shared-dependencies-overwrite"]) {
-			if (typeof manifestData["shared-dependencies-overwrite"][dependency] != "string") {
-				console.error(yellow(dependency + " dependency must be a string"))
-				failed = true
-				break
-			}
-		}
-	}
-
-	if (manifestData["server-dependencies-overwrite"]) {
-		for (const dependency in manifestData["server-dependencies-overwrite"]) {
-			if (typeof manifestData["server-dependencies-overwrite"][dependency] != "string") {
-				console.error(yellow(dependency + " dependency must be a string"))
-				failed = true
-				break
-			}
-		}
-	}
-
-	if (manifestData["dev-dependencies"]) {
-		for (const dependency in manifestData["dev-dependencies"]) {
-			if (typeof manifestData["dev-dependencies"][dependency] != "string") {
-				console.error(yellow(dependency + " dependency must be a string"))
-				failed = true
-				break
-			}
-		}
-	}
-
-	return failed
+	return true
 }
 
 /**
- * @param {Object} manifestData
- * @returns {Object | undefined}
+ * @param { object } manifestData
+ * @returns { boolean } `false` if valid, `true` if invalid
+ */
+function scan(manifestData) {
+	if (manifestData.package) {
+		if (!manifestData.package.environment)
+			return true
+
+		if (manifestData.package.lib && !manifestData.package.build_files)
+			return true
+
+		if (!manifestData.package.lib && manifestData.package.build_files)
+			return true
+	}
+
+	if (manifestData.dependencies) {
+		for (const dependency in manifestData.dependencies)
+			if (!isValidDependency(manifestData.dependencies[dependency]))
+				return true
+	}
+
+	if (manifestData.shared_dependencies_overwrite) {
+		for (const dependency in manifestData.shared_dependencies_overwrite)
+			if (!isValidDependency(manifestData.shared_dependencies_overwrite[dependency]))
+				return true
+	}
+
+	if (manifestData.server_dependencies_overwrite) {
+		for (const dependency in manifestData.server_dependencies_overwrite)
+			if (!isValidDependency(manifestData.server_dependencies_overwrite[dependency]))
+				return true
+	}
+
+	if (manifestData.dev_dependencies) {
+		for (const dependency in manifestData.dev_dependencies)
+			if (!isValidDependency(manifestData.dev_dependencies[dependency]))
+				return true
+	}
+
+	return false
+}
+
+/**
+ * @param { object } manifestData
+ * @returns { object | undefined }
  */
 export function validate(manifestData) {
 	let failed = false

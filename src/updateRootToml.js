@@ -1,23 +1,110 @@
 import { existsSync, writeFileSync } from "fs"
-import { mainPath, manifestFileNames } from "./configs/mainConfig"
-import { getManifestData } from "./manifest"
+import { mainPath, manifestFileNames } from "./configs/mainConfig.js"
+import { getManifestData } from "./universal/manifest.js"
 import { clean } from "semver"
-import toml from "@iarna/toml"
-import { sortDictionaryByKey } from "./sortDictionaryByKey"
+import { debugLog } from "./output/output.js"
+import { magenta } from "./output/colors.js"
 
+/**
+ * @param { object } x
+ */
 function isEmpty(x) {
-	for (var _i in x) {
+	for (const _ in x) {
 		return false
 	}
 
 	return true
 }
 
+/**
+ * Recursively create TOML strings with inline tables and space between top-level keys
+ * @param { object } data
+ */
+function stringifyInlineTables(data) {
+	let tomlString = ""
+
+	// loop through each top-level key in data and convert to TOML
+	for (const key in data) {
+		let value = data[key]
+
+		// add space between top-level sections (keys)
+		if (tomlString !== "") {
+			tomlString += "\n" // add a space between top-level sections
+		}
+
+		// if the value is an object (and not an array), we treat it as an inline table
+		if (typeof value === "object" && !Array.isArray(value) && value !== null) {
+			tomlString += `[${key}]\n` // start a new section for this object
+
+			for (const subKey in value) {
+				if (typeof value[subKey] === "object" && !Array.isArray(value[subKey])) {
+					// inline table
+					tomlString += `${subKey} = { `
+
+					const subObject = value[subKey]
+
+					for (const prop in subObject) {
+						tomlString += `${prop} = "${subObject[prop]}", `
+					}
+
+					tomlString = tomlString.slice(0, -2) // remove the trailing comma and space
+					tomlString += " }\n"  // end the inline table for this subKey
+				} else if (typeof value[subKey] === "object" && Array.isArray(value[subKey])) {
+					// regular array
+					tomlString += `${subKey} = [`
+
+					const subObject = value[subKey]
+
+					for (const prop in subObject) {
+						tomlString += `"${subObject[prop]}", `
+					}
+
+					tomlString = tomlString.slice(0, -2) // remove the trailing comma and space
+					tomlString += "]\n"  // end the array for this subKey
+				} else {
+					tomlString += `${subKey} = "${value[subKey]}"\n` // regular key-value pair
+				}
+			}
+		} else {
+			// for simple values, just output them directly
+			tomlString += `${key} = "${value}"\n`
+		}
+	}
+
+	return tomlString
+}
+
+function sortDictionaryByKey(dependencies) {
+	let items = Object.keys(dependencies).map(function (key) {
+		return [key, dependencies[key]]
+	})
+
+	// sort the array based on the first element
+	items.sort(function (first, second) {
+		return ("" + first[0]).localeCompare(second[0])
+	})
+
+	let newDependencies = {}
+
+	items.forEach((value) => {
+		newDependencies[value[0]] = value[1]
+	})
+
+	return newDependencies
+}
+
 export async function updateRootToml(map) {
 	if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
 		throw `[${manifestFileNames.rostallerManifest}] does not exist`
 
-	var rootManifestData = await getManifestData(`${mainPath}/${manifestFileNames.rostallerManifest}`, true)
+	debugLog(magenta(`Updating root ${manifestFileNames.rostallerManifest} file ...`, true))
+
+	const manifest = {
+		type: manifestFileNames.rostallerManifest,
+		path: `${mainPath}/${manifestFileNames.rostallerManifest}`
+	}
+
+	let rootManifestData = await getManifestData(manifest, true)
 
 	for (const dependency in map) {
 		const alias = map[dependency].alias
@@ -26,20 +113,20 @@ export async function updateRootToml(map) {
 		if (!alias)
 			continue
 
-		var dependencies
+		let dependencies
 
-		if (packageData.realm == "dev")
-			dependencies = rootManifestData["dev-dependencies"]
-		else if (packageData.realmOverwrite == "shared")
-			dependencies = rootManifestData["shared-dependencies-overwrite"]
-		else if (packageData.realmOverwrite == "server")
-			dependencies = rootManifestData["server-dependencies-overwrite"]
+		if (packageData.environment == "dev")
+			dependencies = rootManifestData.dev_dependencies
+		else if (packageData.environmentOverwrite == "shared")
+			dependencies = rootManifestData.shared_dependencies_overwrite
+		else if (packageData.environmentOverwrite == "server")
+			dependencies = rootManifestData.server_dependencies_overwrite
 		else
-			dependencies = rootManifestData["dependencies"]
+			dependencies = rootManifestData.dependencies
 
 		if (!dependencies[alias])
 			continue
-		if (packageData.type == "github-branch")
+		if (packageData.type == "github-rev")
 			continue
 
 		const newVersion = packageData.version
@@ -47,7 +134,7 @@ export async function updateRootToml(map) {
 		if (newVersion == "latest")
 			continue
 
-		const oldVersionString = dependencies[alias].split("@")[1]
+		const oldVersionString = dependencies[alias].version
 
 		if (!oldVersionString)
 			continue
@@ -60,8 +147,7 @@ export async function updateRootToml(map) {
 		if (oldVersion == newVersion)
 			continue
 
-		const newPackageLink = `${packageData.type}#${packageData.owner}/${packageData.name}@${newVersion}`
-		dependencies[alias] = newPackageLink
+		dependencies[alias].version = newVersion
 	}
 
 	for (const key in rootManifestData) {
@@ -69,21 +155,21 @@ export async function updateRootToml(map) {
 			rootManifestData[key] = undefined
 	}
 
-	if (rootManifestData["dependencies"]) {
-		rootManifestData["dependencies"] = sortDictionaryByKey(rootManifestData["dependencies"])
+	if (rootManifestData.dependencies) {
+		rootManifestData.dependencies = sortDictionaryByKey(rootManifestData.dependencies)
 	}
 
-	if (rootManifestData["dev-dependencies"]) {
-		rootManifestData["dev-dependencies"] = sortDictionaryByKey(rootManifestData["dev-dependencies"])
+	if (rootManifestData.dev_dependencies) {
+		rootManifestData.dev_dependencies = sortDictionaryByKey(rootManifestData.dev_dependencies)
 	}
 
-	if (rootManifestData["shared-dependencies-overwrite"]) {
-		rootManifestData["shared-dependencies-overwrite"] = sortDictionaryByKey(rootManifestData["shared-dependencies-overwrite"])
+	if (rootManifestData.shared_dependencies_overwrite) {
+		rootManifestData.shared_dependencies_overwrite = sortDictionaryByKey(rootManifestData.shared_dependencies_overwrite)
 	}
 
-	if (rootManifestData["server-dependencies-overwrite"]) {
-		rootManifestData["server-dependencies-overwrite"] = sortDictionaryByKey(rootManifestData["server-dependencies-overwrite"])
+	if (rootManifestData.server_dependencies_overwrite) {
+		rootManifestData.server_dependencies_overwrite = sortDictionaryByKey(rootManifestData.server_dependencies_overwrite)
 	}
 
-	writeFileSync(`${mainPath}/${manifestFileNames.rostallerManifest}`, toml.stringify(rootManifestData))
+	writeFileSync(`${mainPath}/${manifestFileNames.rostallerManifest}`, stringifyInlineTables(rootManifestData))
 }

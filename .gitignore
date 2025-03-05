@@ -1,6 +1,6 @@
-/packages
-/serverPackages
-/devPackages
+/Packages
+/ServerPackages
+/DevPackages
 
 /node_modules
 /bin
@@ -8,4 +8,3 @@
 /rostaller*
 *.node
 /.temp*
-/run_tests.js

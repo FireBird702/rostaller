@@ -1,31 +1,41 @@
 import { writeFileSync } from "fs"
-import { lockFileName, mainPath } from "./configs/mainConfig"
+import { lockFileName, mainPath } from "./configs/mainConfig.js"
 import toml from "@iarna/toml"
+import { debugLog } from "./output/output.js"
+import { magenta } from "./output/colors.js"
+import { getFullPackageName } from "./universal/package.js"
 
-function getPackageFullName(packageData) {
-	if (packageData.type == "github-branch")
-		return `${packageData.type}#${packageData.owner}/${packageData.name}@${packageData.version}`
-	else if (packageData.version == "latest")
-		return `${packageData.type}#${packageData.owner}/${packageData.name}`
-	else
-		return `${packageData.type}#${packageData.owner}/${packageData.name}@=${packageData.version}`
+function getPackageEntry(packageData) {
+	let packageEntry = {
+		[packageData.type]: `${packageData.scope}/${packageData.name}`,
+		version: packageData.version && `=${packageData.version}` || undefined,
+		index: packageData.index
+	}
+
+	if (packageData.type == "github-rev") {
+		packageEntry.rev = packageData.rev
+	} else if (packageData.version == "latest")
+		packageEntry.version = undefined
+
+	return packageEntry
 }
 
 function formatPackage(packageLink, map, fileData) {
 	const packageData = map[packageLink]
-	const fullName = getPackageFullName(packageData.package)
+	const fullName = getFullPackageName(packageData.package)
 
 	if (fileData[fullName])
 		return
 
 	fileData[fullName] = {
+		...getPackageEntry(packageData.package),
 		alias: packageData.alias,
-		realmOverwrite: packageData.package.realmOverwrite,
+		environmentOverwrite: packageData.package.environmentOverwrite,
 		dependencies: {},
 	}
 
 	for (const key in packageData.dependencies) {
-		const dependencyFullName = getPackageFullName(map[key].package)
+		const dependencyFullName = getFullPackageName(map[key].package)
 
 		fileData[fullName].dependencies[dependencyFullName] = {
 			alias: packageData.dependencies[key].alias,
@@ -34,7 +44,9 @@ function formatPackage(packageLink, map, fileData) {
 }
 
 export async function generateLockFile(map) {
-	var fileData = {}
+	debugLog(magenta(`Generating ${lockFileName} file ...`, true))
+
+	let fileData = {}
 
 	for (const key in map) {
 		formatPackage(key, map, fileData)

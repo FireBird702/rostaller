@@ -171,12 +171,38 @@ fn handled_mutate_thunk(path: &Path, root: &SourcemapNode) -> bool {
     }
 }
 
+fn handle_pesde_package_directory(path: &Path, root: &SourcemapNode) -> Result<bool> {
+    let mut success = true;
+    for package_entry in std::fs::read_dir(path)?.flatten() {
+        if !package_entry.file_type().unwrap().is_dir() {
+            continue;
+        }
+
+        let valid_names = ["roblox_packages", "roblox_server_packages"];
+        if let Some(file_name) = package_entry.file_name().to_str() {
+            if !valid_names.contains(&file_name) {
+                continue;
+            }
+
+            for thunk in std::fs::read_dir(package_entry.path())?.flatten() {
+                if thunk.file_type().unwrap().is_file() {
+                    success &= handled_mutate_thunk(&thunk.path(), root);
+                }
+            }
+        }
+    }
+
+    Ok(success)
+}
+
 fn handle_index_directory(path: &Path, root: &SourcemapNode) -> Result<bool> {
     let mut success = true;
     for package_entry in std::fs::read_dir(path)?.flatten() {
         for thunk in std::fs::read_dir(package_entry.path())?.flatten() {
             if thunk.file_type().unwrap().is_file() {
                 success &= handled_mutate_thunk(&thunk.path(), root);
+            } else if thunk.file_type().unwrap().is_dir() {
+                success &= handle_pesde_package_directory(&thunk.path(), root)?;
             }
         }
     }
