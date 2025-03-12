@@ -220,6 +220,33 @@ async function getDependencies(versionMetadata) {
 }
 
 /**
+ * @param { string } packageString
+ * @param { any } parentDependencies
+ * @param { string } alias
+ */
+function addDependencyAlias(packageString, parentDependencies, alias) {
+    if (parentDependencies && !parentDependencies[packageString])
+        parentDependencies[packageString] = { alias: alias }
+}
+
+/**
+ * @param { string } packageString
+ * @param { any } tree
+ * @param { any } parentDependencies
+ * @param { string } alias
+ */
+function addAlias(packageString, tree, parentDependencies, alias) {
+    if (parentDependencies)
+        return
+
+    if (!tree[packageString])
+        tree[packageString] = { dependencies: {} }
+
+    if (tree[packageString] && !tree[packageString].alias)
+        tree[packageString].alias = alias || undefined
+}
+
+/**
  * @param { { package: dependency, tree: any, parentDependencies: any? } } args
  */
 export async function download(args) {
@@ -234,11 +261,8 @@ export async function download(args) {
 
         let assetFolder = assetPath + `@${packageVersion}`
 
-        if (args.parentDependencies && !args.parentDependencies[packageString])
-            args.parentDependencies[packageString] = { alias: packageEntry.alias }
-
-        if (args.tree[packageString] && !args.tree[packageString].alias)
-            args.tree[packageString].alias = !args.parentDependencies && packageEntry.alias || undefined
+        addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
+        addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
 
         if (!existsSync(assetFolder)) {
             // download release repo
@@ -274,8 +298,7 @@ export async function download(args) {
             if (!args.tree[packageString])
                 args.tree[packageString] = { dependencies: {} }
 
-            if (!args.tree[packageString].alias)
-                args.tree[packageString].alias = !args.parentDependencies && packageEntry.alias || undefined
+            addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
 
             args.tree[packageString].package = {
                 scope: packageEntry.scope,
