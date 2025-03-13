@@ -256,10 +256,6 @@ export async function download(args) {
 		const packageString = getFullPackageName(packageEntry, { version: packageVersion })
 		const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, packageVersion, packageEntry.index)
 
-		if (packageEntry.name == "planck") {
-			console.log(packageEntry.version, packageVersion)
-		}
-
 		const environment = packageEntry.environmentOverwrite || versionMetadata.package.realm
 		const assetPath = `${packageFolderPaths.get(environment)}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
 
