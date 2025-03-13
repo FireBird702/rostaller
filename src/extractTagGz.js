@@ -9,25 +9,25 @@ import { cyan } from "./output/colors.js"
  * @param { string } outputDir
  */
 export async function extractTarGz(filePath, outputDir) {
-    try {
-        if (!existsSync(outputDir)) {
-            mkdirSync(outputDir, { recursive: true })
-        }
+	try {
+		if (!existsSync(outputDir)) {
+			mkdirSync(outputDir, { recursive: true })
+		}
 
-        // Create a read stream for the .tar.gz file
-        const readStream = createReadStream(filePath)
+		// Create a read stream for the .tar.gz file
+		const readStream = createReadStream(filePath)
 
-        // Use a promise to wrap the extraction process
-        await new Promise((resolve, reject) => {
-            readStream
-                .pipe(createGunzip())  // Decompress the .gz part
-                .pipe(x({ cwd: outputDir }))  // Extract the .tar content
-                .on("finish", resolve)  // Resolve the promise on completion
-                .on("error", reject);  // Reject the promise on error
-        });
+		// Use a promise to wrap the extraction process
+		await new Promise((resolve, reject) => {
+			readStream
+				.pipe(createGunzip())  // Decompress the .gz part
+				.pipe(x({ cwd: outputDir }))  // Extract the .tar content
+				.on("finish", resolve)  // Resolve the promise on completion
+				.on("error", reject);  // Reject the promise on error
+		});
 
-        debugLog(`Extraction to ${cyan(outputDir)} completed!`)
-    } catch (err) {
-        throw `Error during extraction: ${err}`
-    }
+		debugLog(`Extraction to ${cyan(outputDir)} completed!`)
+	} catch (err) {
+		throw `Error during extraction: ${err}`
+	}
 }

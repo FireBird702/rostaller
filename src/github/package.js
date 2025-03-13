@@ -134,7 +134,7 @@ async function resolveRequirement(packageEntry) {
 		range = `^${range}`
 	}
 
-	const validVersion = maxSatisfying(availableVersions, range, { loose: true })
+	const validVersion = maxSatisfying(availableVersions, range, { loose: true, includePrerelease: true })
 
 	if (!validVersion) {
 		debugLog(`Could not satisfy requirement - ${range}`)

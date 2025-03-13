@@ -37,19 +37,19 @@ import AdmZip from "adm-zip"
  * @returns { package }
  */
 function packageEntryFromDependency(dependency) {
-    const scope_name = dependency.name.split("/")
+	const scope_name = dependency.name.split("/")
 
-    const packageEntry = {
-        alias: dependency.alias,
-        scope: scope_name[0],
-        name: scope_name[1],
-        version: dependency.version,
-        index: dependency.index,
-        environmentOverwrite: dependency.environmentOverwrite,
-        type: dependency.type
-    }
+	const packageEntry = {
+		alias: dependency.alias,
+		scope: scope_name[0],
+		name: scope_name[1],
+		version: dependency.version,
+		index: dependency.index,
+		environmentOverwrite: dependency.environmentOverwrite,
+		type: dependency.type
+	}
 
-    return packageEntry
+	return packageEntry
 }
 
 /**
@@ -58,13 +58,13 @@ function packageEntryFromDependency(dependency) {
  * @returns { string }
  */
 function getFullPackageName(packageData, overwrites) {
-    let packageString = ""
+	let packageString = ""
 
-    if (!overwrites || !overwrites.ignoreType)
-        packageString += `${packageData.type}#`
+	if (!overwrites || !overwrites.ignoreType)
+		packageString += `${packageData.type}#`
 
-    packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.version) || packageData.version}`
-    return packageString
+	packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.version) || packageData.version}`
+	return packageString
 }
 
 /**
@@ -73,34 +73,34 @@ function getFullPackageName(packageData, overwrites) {
  * @param { string } index
  */
 async function getPackageMetadata(scope, name, index) {
-    return new Promise((resolve, reject) => {
-        getRegistry(index)
-            .then(async (registry) => {
-                const response = await getAsync(`${registry.api}/v1/package-metadata/${scope}/${name}`, {
-                    Authorization: auth.wally != "" && "Bearer " + auth.wally,
-                    ["Wally-Version"]: wallyVersion
-                }, "json")
+	return new Promise((resolve, reject) => {
+		getRegistry(index)
+			.then(async (registry) => {
+				const response = await getAsync(`${registry.api}/v1/package-metadata/${scope}/${name}`, {
+					Authorization: auth.wally != "" && "Bearer " + auth.wally,
+					["Wally-Version"]: wallyVersion
+				}, "json")
 
-                if (!response || !response.versions)
-                    if (registry.fallback_registries) {
-                        for (const fallback_registry in registry.fallback_registries) {
-                            const versions = await getPackageMetadata(scope, name, fallback_registry)
+				if (!response || !response.versions)
+					if (registry.fallback_registries) {
+						for (const fallback_registry in registry.fallback_registries) {
+							const versions = await getPackageMetadata(scope, name, fallback_registry)
 
-                            if (versions) {
-                                resolve(versions)
-                                break
-                            }
-                        }
-                    } else
-                        resolve(undefined)
+							if (versions) {
+								resolve(versions)
+								break
+							}
+						}
+					} else
+						resolve(undefined)
 
-                resolve(response.versions)
-            })
-            .catch((reason) => {
-                reject(reason)
-            })
+				resolve(response.versions)
+			})
+			.catch((reason) => {
+				reject(reason)
+			})
 
-    })
+	})
 }
 
 let metadataCache = {}
@@ -111,11 +111,11 @@ let metadataCache = {}
  * @param { string } index
  */
 async function getMetadata(scope, name, index) {
-    if (metadataCache[`${scope}/${name}`])
-        return await metadataCache[`${scope}/${name}`]
+	if (metadataCache[`${scope}/${name}`])
+		return await metadataCache[`${scope}/${name}`]
 
-    metadataCache[`${scope}/${name}`] = getPackageMetadata(scope, name, index)
-    return await metadataCache[`${scope}/${name}`]
+	metadataCache[`${scope}/${name}`] = getPackageMetadata(scope, name, index)
+	return await metadataCache[`${scope}/${name}`]
 }
 
 /**
@@ -124,16 +124,16 @@ async function getMetadata(scope, name, index) {
  * @param { string } index
  */
 async function getPackageVersions(scope, name, index) {
-    const metadata = await getMetadata(scope, name, index)
+	const metadata = await getMetadata(scope, name, index)
 
-    let versions = []
+	let versions = []
 
-    for (const versionData of metadata) {
-        versions.push(clean(versionData.package.version, { loose: true }))
-    }
+	for (const versionData of metadata) {
+		versions.push(clean(versionData.package.version, { loose: true }))
+	}
 
-    versions.sort((v1, v2) => rcompare(v1, v2))
-    return versions
+	versions.sort((v1, v2) => rcompare(v1, v2))
+	return versions
 }
 
 /**
@@ -142,26 +142,26 @@ async function getPackageVersions(scope, name, index) {
  * @returns
  */
 async function resolveRequirement(packageEntry) {
-    debugLog(`Checking versions for ${getFullPackageName(packageEntry)} ...`)
+	debugLog(`Checking versions for ${getFullPackageName(packageEntry)} ...`)
 
-    const availableVersions = await getPackageVersions(packageEntry.scope, packageEntry.name, packageEntry.index)
-    debugLog(availableVersions)
+	const availableVersions = await getPackageVersions(packageEntry.scope, packageEntry.name, packageEntry.index)
+	debugLog(availableVersions)
 
-    const PATTERN = /[<>=^~]/
-    let range = packageEntry.version
+	const PATTERN = /[<>=^~]/
+	let range = packageEntry.version
 
-    if (!range.match(PATTERN)) {
-        range = `^${range}`
-    }
+	if (!range.match(PATTERN)) {
+		range = `^${range}`
+	}
 
-    const validVersion = maxSatisfying(availableVersions, range, { loose: true })
+	const validVersion = maxSatisfying(availableVersions, range, { loose: true, includePrerelease: true })
 
-    if (!validVersion) {
-        debugLog(`Could not satisfy requirement - ${range}`)
-        return null
-    }
+	if (!validVersion) {
+		debugLog(`Could not satisfy requirement - ${range}`)
+		return null
+	}
 
-    return validVersion
+	return validVersion
 }
 
 /**
@@ -171,14 +171,14 @@ async function resolveRequirement(packageEntry) {
  * @param { string } index
  */
 async function getVersionMetadata(scope, name, version, index) {
-    const allVersionsMetaData = await getMetadata(scope, name, index)
+	const allVersionsMetaData = await getMetadata(scope, name, index)
 
-    for (const versionData of allVersionsMetaData) {
-        if (versionData.package.version == version)
-            return versionData
-    }
+	for (const versionData of allVersionsMetaData) {
+		if (versionData.package.version == version)
+			return versionData
+	}
 
-    return null
+	return null
 }
 
 /**
@@ -186,37 +186,37 @@ async function getVersionMetadata(scope, name, version, index) {
  * @returns { Promise<dependency[]> }
  */
 async function getDependencies(versionMetadata) {
-    let dependencies = []
+	let dependencies = []
 
-    function addDependency(alias, dependencyData, environmentOverwrite) {
-        const name = dependencyData.split("@")[0]
-        const version = dependencyData.split("@")[1]
+	function addDependency(alias, dependencyData, environmentOverwrite) {
+		const name = dependencyData.split("@")[0]
+		const version = dependencyData.split("@")[1]
 
-        const packageEntry = {
-            alias: alias,
-            name: name,
-            version: version,
-            index: versionMetadata.package.registry,
-            environmentOverwrite: environmentOverwrite,
-            type: "wally"
-        }
+		const packageEntry = {
+			alias: alias,
+			name: name,
+			version: version,
+			index: versionMetadata.package.registry,
+			environmentOverwrite: environmentOverwrite,
+			type: "wally"
+		}
 
-        dependencies.push(packageEntry)
-    }
+		dependencies.push(packageEntry)
+	}
 
-    const packageDependencies = versionMetadata["dependencies"]
+	const packageDependencies = versionMetadata["dependencies"]
 
-    for (const alias in packageDependencies) {
-        addDependency(alias, packageDependencies[alias])
-    }
+	for (const alias in packageDependencies) {
+		addDependency(alias, packageDependencies[alias])
+	}
 
-    const packageServerDependencies = versionMetadata["server-dependencies"]
+	const packageServerDependencies = versionMetadata["server-dependencies"]
 
-    for (const alias in packageServerDependencies) {
-        addDependency(alias, packageServerDependencies[alias], "server")
-    }
+	for (const alias in packageServerDependencies) {
+		addDependency(alias, packageServerDependencies[alias], "server")
+	}
 
-    return dependencies
+	return dependencies
 }
 
 /**
@@ -225,8 +225,8 @@ async function getDependencies(versionMetadata) {
  * @param { string } alias
  */
 function addDependencyAlias(packageString, parentDependencies, alias) {
-    if (parentDependencies && !parentDependencies[packageString])
-        parentDependencies[packageString] = { alias: alias }
+	if (parentDependencies && !parentDependencies[packageString])
+		parentDependencies[packageString] = { alias: alias }
 }
 
 /**
@@ -236,134 +236,138 @@ function addDependencyAlias(packageString, parentDependencies, alias) {
  * @param { string } alias
  */
 function addAlias(packageString, tree, parentDependencies, alias) {
-    if (parentDependencies)
-        return
+	if (parentDependencies)
+		return
 
-    if (!tree[packageString])
-        tree[packageString] = { dependencies: {} }
+	if (!tree[packageString])
+		tree[packageString] = { dependencies: {} }
 
-    if (tree[packageString] && !tree[packageString].alias)
-        tree[packageString].alias = alias || undefined
+	if (tree[packageString] && !tree[packageString].alias)
+		tree[packageString].alias = alias || undefined
 }
 
 /**
  * @param { { package: dependency, tree: any, parentDependencies: any? } } args
  */
 export async function download(args) {
-    try {
-        const packageEntry = packageEntryFromDependency(args.package)
-        const packageVersion = await resolveRequirement(packageEntry)
-        const packageString = getFullPackageName(packageEntry, { version: packageVersion })
-        const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, packageVersion, packageEntry.index)
+	try {
+		const packageEntry = packageEntryFromDependency(args.package)
+		const packageVersion = await resolveRequirement(packageEntry)
+		const packageString = getFullPackageName(packageEntry, { version: packageVersion })
+		const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, packageVersion, packageEntry.index)
 
-        const environment = packageEntry.environmentOverwrite || versionMetadata.package.realm
-        const assetPath = `${packageFolderPaths.get(environment)}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
+		if (packageEntry.name == "planck") {
+			console.log(packageEntry.version, packageVersion)
+		}
 
-        let assetFolder = assetPath + `@${packageVersion}`
+		const environment = packageEntry.environmentOverwrite || versionMetadata.package.realm
+		const assetPath = `${packageFolderPaths.get(environment)}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
 
-        addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
-        addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
+		let assetFolder = assetPath + `@${packageVersion}`
 
-        if (!existsSync(assetFolder)) {
-            // download release repo
+		addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
+		addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
 
-            debugLog(`Downloading ${green(packageString)} ...`)
+		if (!existsSync(assetFolder)) {
+			// download release repo
 
-            const registry = await getRegistry(packageEntry.index)
-            const asset = await getAsync(`${registry.api}/v1/package-contents/${packageEntry.scope}/${packageEntry.name}/${packageVersion}`, {
-                Authorization: auth.wally != "" && "Bearer " + auth.wally,
-                ["Wally-Version"]: wallyVersion
-            })
+			debugLog(`Downloading ${green(packageString)} ...`)
 
-            if (existsSync(assetFolder)) {
-                debugLog(`Package ${green(packageString)} already exists`)
-                return
-            }
+			const registry = await getRegistry(packageEntry.index)
+			const asset = await getAsync(`${registry.api}/v1/package-contents/${packageEntry.scope}/${packageEntry.name}/${packageVersion}`, {
+				Authorization: auth.wally != "" && "Bearer " + auth.wally,
+				["Wally-Version"]: wallyVersion
+			})
 
-            if (asset.toString().substring(0, 2) != "PK")
-                throw "Failed to download release files"
+			if (existsSync(assetFolder)) {
+				debugLog(`Package ${green(packageString)} already exists`)
+				return
+			}
 
-            mkdirSync(assetFolder, { recursive: true })
+			if (asset.toString().substring(0, 2) != "PK")
+				throw "Failed to download release files"
 
-            const assetZip = assetFolder + ".zip"
-            writeFileSync(assetZip, asset)
+			mkdirSync(assetFolder, { recursive: true })
 
-            let assetFile = assetFolder + `/${packageEntry.name.toLowerCase()}`
+			const assetZip = assetFolder + ".zip"
+			writeFileSync(assetZip, asset)
 
-            const zip = new AdmZip(assetZip)
-            zip.extractAllTo(path.resolve(assetFile), true)
+			let assetFile = assetFolder + `/${packageEntry.name.toLowerCase()}`
 
-            await rimraf(assetZip)
+			const zip = new AdmZip(assetZip)
+			zip.extractAllTo(path.resolve(assetFile), true)
 
-            if (!args.tree[packageString])
-                args.tree[packageString] = { dependencies: {} }
+			await rimraf(assetZip)
 
-            addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
+			if (!args.tree[packageString])
+				args.tree[packageString] = { dependencies: {} }
 
-            args.tree[packageString].package = {
-                scope: packageEntry.scope,
-                name: packageEntry.name,
-                version: packageVersion,
-                environment: environment,
-                environmentOverwrite: packageEntry.environmentOverwrite,
-                type: packageEntry.type,
-                index: packageEntry.index
-            }
+			addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
 
-            // check package data and sub packages
-            const assetDirContent = readdirSync(assetFile)
-            let content = {}
+			args.tree[packageString].package = {
+				scope: packageEntry.scope,
+				name: packageEntry.name,
+				version: packageVersion,
+				environment: environment,
+				environmentOverwrite: packageEntry.environmentOverwrite,
+				type: packageEntry.type,
+				index: packageEntry.index
+			}
 
-            for (const key in assetDirContent)
-                content[assetDirContent[key]] = true
+			// check package data and sub packages
+			const assetDirContent = readdirSync(assetFile)
+			let content = {}
 
-            // rename default.project.json
-            if (content[defaultProjectJsonName]) {
-                const projectPath = assetFile + `/${defaultProjectJsonName}`
-                let projectFile = validateJson("Project", projectPath, readFileSync(projectPath))
+			for (const key in assetDirContent)
+				content[assetDirContent[key]] = true
 
-                if (projectFile.name != packageEntry.name.toLowerCase()) {
-                    debugLog("Renaming", cyan(projectPath))
+			// rename default.project.json
+			if (content[defaultProjectJsonName]) {
+				const projectPath = assetFile + `/${defaultProjectJsonName}`
+				let projectFile = validateJson("Project", projectPath, readFileSync(projectPath))
 
-                    projectFile.name = packageEntry.name.toLowerCase()
-                    writeFileSync(projectPath, JSON.stringify(projectFile, null, "\t"))
-                }
-            }
+				if (projectFile.name != packageEntry.name.toLowerCase()) {
+					debugLog("Renaming", cyan(projectPath))
 
-            downloadStats.success += 1
-            console.log(`Downloaded ${green(getFullPackageName(packageEntry, { version: packageVersion, ignoreType: true }))} from wally`)
+					projectFile.name = packageEntry.name.toLowerCase()
+					writeFileSync(projectPath, JSON.stringify(projectFile, null, "\t"))
+				}
+			}
 
-            return {
-                packageLink: packageString,
-                dependencies: await getDependencies(versionMetadata)
-            }
-        } else {
-            debugLog(`Package ${green(packageString)} already exists`)
-        }
-    } catch (err) {
-        downloadStats.fail += 1
+			downloadStats.success += 1
+			console.log(`Downloaded ${green(getFullPackageName(packageEntry, { version: packageVersion, ignoreType: true }))} from wally`)
 
-        const packageEntry = packageEntryFromDependency(args.package)
-        const packageString = getFullPackageName(packageEntry, { ignoreType: true })
-        console.error(red("Failed to download wally package"), green(packageString) + red(":"), yellow(err))
-    }
+			return {
+				packageLink: packageString,
+				dependencies: await getDependencies(versionMetadata)
+			}
+		} else {
+			debugLog(`Package ${green(packageString)} already exists`)
+		}
+	} catch (err) {
+		downloadStats.fail += 1
+
+		const packageEntry = packageEntryFromDependency(args.package)
+		const packageString = getFullPackageName(packageEntry, { ignoreType: true })
+		console.error(red("Failed to download wally package"), green(packageString) + red(":"), yellow(err))
+	}
 }
 
 /**
  * @param { { package: dependency, tree: any, parentDependencies: any? } } args
  */
 export async function deepDownload(args) {
-    try {
-        const result = await download(args)
+	try {
+		const result = await download(args)
 
-        if (!result)
-            return
+		if (!result)
+			return
 
-        const downloadDeepDependencies = (await import("../universal/manifest.js")).downloadDeepDependencies
-        await downloadDeepDependencies(result.dependencies, args.tree, args.tree[result.packageLink].dependencies)
-    } catch (err) {
-        const packageEntry = packageEntryFromDependency(args.package)
-        const packageString = getFullPackageName(packageEntry, { ignoreType: true })
-        console.error(red("Failed to check wally package dependencies"), green(packageString) + red(":"), yellow(err))
-    }
+		const downloadDeepDependencies = (await import("../universal/manifest.js")).downloadDeepDependencies
+		await downloadDeepDependencies(result.dependencies, args.tree, args.tree[result.packageLink].dependencies)
+	} catch (err) {
+		const packageEntry = packageEntryFromDependency(args.package)
+		const packageString = getFullPackageName(packageEntry, { ignoreType: true })
+		console.error(red("Failed to check wally package dependencies"), green(packageString) + red(":"), yellow(err))
+	}
 }
