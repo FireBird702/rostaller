@@ -8,7 +8,7 @@ import { debugLog } from "../output/output.js"
 import { renameFile } from "../renameFile.js"
 import * as packageFolderPaths from "../packageFolderPaths.js"
 import * as syncConfigGenerator from "../syncConfigGenerator.js"
-import { clean, rcompare, maxSatisfying } from "semver"
+import * as semver from "semver"
 import { rimraf } from "rimraf"
 import AdmZip from "adm-zip"
 
@@ -103,7 +103,7 @@ async function getPackageVersions(scope, name) {
 	let versions = []
 
 	for (const versionData of metadata) {
-		const cleanVersion = clean(versionData.tag_name, { loose: true })
+		const cleanVersion = semver.clean(versionData.tag_name, { loose: true })
 
 		if (!cleanVersion) {
 			continue
@@ -112,7 +112,7 @@ async function getPackageVersions(scope, name) {
 		versions.push(cleanVersion)
 	}
 
-	versions.sort((v1, v2) => rcompare(v1, v2))
+	versions.sort((v1, v2) => semver.rcompare(v1, v2))
 	return versions
 }
 
@@ -134,7 +134,8 @@ async function resolveRequirement(packageEntry) {
 		range = `^${range}`
 	}
 
-	const validVersion = maxSatisfying(availableVersions, range, { loose: true, includePrerelease: true })
+	const includePrerelease = semver.prerelease(packageEntry.version, { loose: true }) || false
+	const validVersion = semver.maxSatisfying(availableVersions, range, { loose: true, includePrerelease: includePrerelease })
 
 	if (!validVersion) {
 		debugLog(`Could not satisfy requirement - ${range}`)
@@ -201,7 +202,7 @@ export async function download(args) {
 			const version = await resolveRequirement(packageEntry)
 			const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, version)
 
-			packageVersion = (versionMetadata && clean(versionMetadata.tag_name, { loose: true })) || "latest"
+			packageVersion = (versionMetadata && semver.clean(versionMetadata.tag_name, { loose: true })) || "latest"
 			tag = (versionMetadata && versionMetadata.tag_name) || "latest"
 		}
 
@@ -240,7 +241,7 @@ export async function download(args) {
 				throw "Failed to get release info"
 
 			if (packageVersion == "latest") {
-				packageVersion = clean(release.tag_name, { loose: true }) || packageVersion
+				packageVersion = semver.clean(release.tag_name, { loose: true }) || packageVersion
 				assetFolder = assetPath + `@${packageVersion}`
 
 				const newPackageString = getFullPackageName(packageEntry, { version: packageVersion })

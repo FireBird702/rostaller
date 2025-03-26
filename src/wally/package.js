@@ -7,7 +7,7 @@ import { defaultProjectJsonName, downloadStats, defaultFolderNames, auth, wallyV
 import { debugLog } from "../output/output.js"
 import * as packageFolderPaths from "../packageFolderPaths.js"
 import { getRegistry } from "./registry.js"
-import { clean, rcompare, maxSatisfying } from "semver"
+import * as semver from "semver"
 import { rimraf } from "rimraf"
 import AdmZip from "adm-zip"
 
@@ -129,10 +129,10 @@ async function getPackageVersions(scope, name, index) {
 	let versions = []
 
 	for (const versionData of metadata) {
-		versions.push(clean(versionData.package.version, { loose: true }))
+		versions.push(semver.clean(versionData.package.version, { loose: true }))
 	}
 
-	versions.sort((v1, v2) => rcompare(v1, v2))
+	versions.sort((v1, v2) => semver.rcompare(v1, v2))
 	return versions
 }
 
@@ -154,7 +154,8 @@ async function resolveRequirement(packageEntry) {
 		range = `^${range}`
 	}
 
-	const validVersion = maxSatisfying(availableVersions, range, { loose: true, includePrerelease: true })
+	const includePrerelease = semver.prerelease(packageEntry.version, { loose: true }) || false
+	const validVersion = semver.maxSatisfying(availableVersions, range, { loose: true, includePrerelease: includePrerelease })
 
 	if (!validVersion) {
 		debugLog(`Could not satisfy requirement - ${range}`)

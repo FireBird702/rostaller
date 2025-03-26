@@ -7,7 +7,7 @@ import { debugLog } from "../output/output.js"
 import * as packageFolderPaths from "../packageFolderPaths.js"
 import { getRegistry } from "./registry.js"
 import { extractTarGz } from "../extractTagGz.js"
-import { clean, rcompare, maxSatisfying } from "semver"
+import * as semver from "semver"
 import { rimraf } from "rimraf"
 import * as syncConfigGenerator from "../syncConfigGenerator.js"
 import { validateJson, validateToml } from "../validator/validator.js"
@@ -155,12 +155,12 @@ async function getPackageVersions(scope, name, index) {
 			if (!validTargets.includes(target))
 				continue
 
-			versions.push(clean(version, { loose: true }))
+			versions.push(semver.clean(version, { loose: true }))
 			break
 		}
 	}
 
-	versions.sort((v1, v2) => rcompare(v1, v2))
+	versions.sort((v1, v2) => semver.rcompare(v1, v2))
 	return versions
 }
 
@@ -182,7 +182,8 @@ async function resolveRequirement(packageEntry) {
 		range = `^${range}`
 	}
 
-	const validVersion = maxSatisfying(availableVersions, range, { loose: true, includePrerelease: true })
+	const includePrerelease = semver.prerelease(packageEntry.version, { loose: true }) || false
+	const validVersion = semver.maxSatisfying(availableVersions, range, { loose: true, includePrerelease: includePrerelease })
 
 	if (!validVersion) {
 		debugLog(`Could not satisfy requirement - ${range}`)

@@ -6,7 +6,7 @@ import { createLuauFiles } from "../luauFileCreator.js"
 import { debugLog } from "../output/output.js"
 import { validateToml } from "../validator/validator.js"
 import * as packageFolderPaths from "../packageFolderPaths.js"
-import { clean } from "semver"
+import * as semver from "semver"
 import { rimraf } from "rimraf"
 
 export async function installFromLock() {
@@ -49,7 +49,7 @@ export async function installFromLock() {
 				return packageLink
 
 			const version = packageLink.split("@")[1]
-			return `${packageLink.split("@")[0]}@${clean(version, { loose: true })}`
+			return `${packageLink.split("@")[0]}@${semver.clean(version, { loose: true })}`
 		}
 
 		// add dependencies to downloaded packages

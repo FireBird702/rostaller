@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "fs"
 import { mainPath, manifestFileNames } from "./configs/mainConfig.js"
 import { getManifestData } from "./universal/manifest.js"
-import { clean } from "semver"
+import * as semver from "semver"
 import { debugLog } from "./output/output.js"
 import { magenta } from "./output/colors.js"
 
@@ -139,7 +139,7 @@ export async function updateRootToml(map) {
 		if (!oldVersionString)
 			continue
 
-		const oldVersion = clean(oldVersionString, { loose: true }) // ranges (>=1.0.0 < 2.0.0) will return null
+		const oldVersion = semver.clean(oldVersionString, { loose: true }) // ranges (>=1.0.0 < 2.0.0) will return null
 
 		if (!oldVersion) {
 			continue
