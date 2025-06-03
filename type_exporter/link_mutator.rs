@@ -116,7 +116,7 @@ pub fn create_new_type_declaration(stmt: &ExportedTypeDeclaration) -> ExportedTy
         module: TokenReference::new(
             vec![],
             Token::new(TokenType::Identifier {
-                identifier: "REQUIRED_MODULE".into(),
+                identifier: "module".into(),
             }),
             vec![],
         ),
@@ -148,7 +148,7 @@ fn re_export_type_declarations(
         .collect()
 }
 
-/// Extracts a require expression out into a local variable of form `local REQUIRED_MODULE = ...`
+/// Extracts a require expression out into a local variable of form `local module = ...`
 fn extract_require_into_local_stmt(
     return_expressions: Punctuated<Expression>,
 ) -> (Stmt, Option<TokenReference>) {
@@ -158,7 +158,7 @@ fn extract_require_into_local_stmt(
                 std::iter::once(Pair::End(TokenReference::new(
                     vec![],
                     Token::new(TokenType::Identifier {
-                        identifier: "REQUIRED_MODULE".into(),
+                        identifier: "module".into(),
                     }),
                     vec![],
                 )))
@@ -171,7 +171,7 @@ fn extract_require_into_local_stmt(
     )
 }
 
-/// Creates a `return REQUIRED_MODULE` node
+/// Creates a `return module` node
 fn create_return_require_variable() -> (LastStmt, Option<TokenReference>) {
     (
         LastStmt::Return(
@@ -179,7 +179,7 @@ fn create_return_require_variable() -> (LastStmt, Option<TokenReference>) {
                 std::iter::once(Pair::End(Expression::Symbol(TokenReference::new(
                     vec![],
                     Token::new(TokenType::Identifier {
-                        identifier: "REQUIRED_MODULE".into(),
+                        identifier: "module".into(),
                     }),
                     vec![Token::new(TokenType::Whitespace {
                         characters: "\n".into(),
