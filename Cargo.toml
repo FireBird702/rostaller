@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1"
-full_moon = { version = "1", features = ["luau"] }
+full_moon = { version = "2", features = ["luau"] }
 log = "0.4"
 serde = "1"
 serde_json = "1"
