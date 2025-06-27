@@ -1,2 +1,2 @@
 import "./build.js"
-import "./run.js"
+import "./install.js"
