@@ -1,3 +1,5 @@
+// This is a modified version of https://github.com/JohnnyMorganz/wally-package-types
+
 use neon::prelude::*;
 
 mod command;
