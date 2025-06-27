@@ -80,8 +80,9 @@ export function setConfigFromRootManifest(manifestData) {
  * @param { import("../download.js").unversalDependency[] } dependencies
  * @param { * } tree
  * @param { * } parentDependencies
+ * @param { boolean? } isRoot
  */
-export async function downloadDeepDependencies(dependencies, tree, parentDependencies) {
+export async function downloadDeepDependencies(dependencies, tree, parentDependencies, isRoot) {
 	const queue = new Queue(config.maxConcurrentDownloads)
 	const promises = []
 
@@ -93,6 +94,7 @@ export async function downloadDeepDependencies(dependencies, tree, parentDepende
 			package: dependency,
 			parentDependencies: parentDependencies,
 			tree: tree,
+			isRoot: isRoot
 		}).catch((err) => console.error(err))))
 	}
 
@@ -135,7 +137,7 @@ export async function downloadManifestDependencies(manifest, tree, parentDepende
 	}
 
 	const allDependencies = await getManifestDependencies(manifest, isRoot)
-	return await downloadDeepDependencies(allDependencies, tree, parentDependencies)
+	return await downloadDeepDependencies(allDependencies, tree, parentDependencies, isRoot)
 }
 
 /**
@@ -168,6 +170,7 @@ export async function downloadLockDependencies(lockFileData, tree) {
 			package: dependency,
 			parentDependencies: undefined,
 			tree: tree,
+			isRoot: dependency.isMainDependency
 		}).catch((err) => console.error(err))))
 	}
 

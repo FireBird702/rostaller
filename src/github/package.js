@@ -11,6 +11,7 @@ import * as syncConfigGenerator from "../syncConfigGenerator.js"
 import * as semver from "semver"
 import { rimraf } from "rimraf"
 import AdmZip from "adm-zip"
+import { registerPackageUpdate, registerPackageUpdateAvailable } from "../universal/package.js"
 
 const UTF8 = new TextDecoder("utf-8")
 
@@ -119,9 +120,10 @@ async function getPackageVersions(scope, name) {
 /**
  * Returns package version that matches the requirement
  * @param { package } packageEntry
+ * @param { boolean } isRoot used to show updated packages and check for updates
  * @returns
  */
-async function resolveRequirement(packageEntry) {
+async function resolveRequirement(packageEntry, isRoot) {
 	debugLog(`Checking versions for ${getFullPackageName(packageEntry)} ...`)
 
 	const availableVersions = await getPackageVersions(packageEntry.scope, packageEntry.name)
@@ -140,6 +142,24 @@ async function resolveRequirement(packageEntry) {
 	if (!validVersion) {
 		debugLog(`Could not satisfy requirement - ${range}`)
 		return null
+	}
+
+	const cleanedDefaultVersion = semver.clean(packageEntry.version)
+
+	if (isRoot && cleanedDefaultVersion) {
+		if (semver.neq(cleanedDefaultVersion, validVersion))
+			registerPackageUpdate({
+				fullName: `${packageEntry.scope}/${packageEntry.name}`,
+				newVersion: validVersion,
+				oldVersion: cleanedDefaultVersion
+			})
+
+		if (availableVersions.length > 0 && semver.lt(validVersion, availableVersions[0], { loose: true }))
+			registerPackageUpdateAvailable({
+				fullName: `${packageEntry.scope}/${packageEntry.name}`,
+				newVersion: availableVersions[0],
+				oldVersion: validVersion
+			})
 	}
 
 	return validVersion
@@ -189,7 +209,7 @@ function addAlias(packageString, tree, parentDependencies, alias) {
 }
 
 /**
- * @param { { package: dependency, tree: any, parentDependencies: any? } } args
+ * @param { { package: dependency, tree: any, parentDependencies: any?, isRoot: boolean? } } args
  */
 export async function download(args) {
 	try {
@@ -199,7 +219,7 @@ export async function download(args) {
 		const packageEntry = packageEntryFromDependency(args.package)
 
 		if (packageEntry.version) {
-			const version = await resolveRequirement(packageEntry)
+			const version = await resolveRequirement(packageEntry, args.isRoot)
 			const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, version)
 
 			packageVersion = (versionMetadata && semver.clean(versionMetadata.tag_name, { loose: true })) || "latest"
@@ -305,6 +325,7 @@ export async function download(args) {
 				environment: packageEntry.environmentOverwrite,
 				environmentOverwrite: packageEntry.environmentOverwrite,
 				type: packageEntry.type,
+				isMainDependency: args.isRoot
 			}
 
 			// check package data and sub packages
@@ -449,7 +470,7 @@ export async function download(args) {
 }
 
 /**
- * @param { { package: dependency, tree: any, parentDependencies: any? } } args
+ * @param { { package: dependency, tree: any, parentDependencies: any?, isRoot: boolean? } } args
  */
 export async function deepDownload(args) {
 	try {

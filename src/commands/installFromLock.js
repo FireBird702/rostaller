@@ -8,6 +8,8 @@ import { validateToml } from "../validator/validator.js"
 import * as packageFolderPaths from "../packageFolderPaths.js"
 import * as semver from "semver"
 import { rimraf } from "rimraf"
+import { updateAvailablePackages } from "../universal/package.js"
+import { showUpdates } from "../showUpdates.js"
 
 export async function installFromLock() {
 	try {
@@ -75,6 +77,8 @@ export async function installFromLock() {
 			finalMessage += `, ${downloadStats.fail} failed`
 
 		console.log(finalMessage)
+
+		showUpdates(`Available package updates:`, updateAvailablePackages)
 
 		debugLog(magenta(`Time passed: ${(Date.now() - startTime) / 1000} seconds`, true))
 	} catch (err) {

@@ -8,6 +8,8 @@ import { generateLockFile } from "../lockFileCreator.js"
 import { updateRootToml } from "../updateRootToml.js"
 import * as packageFolderPaths from "../packageFolderPaths.js"
 import { rimraf } from "rimraf"
+import { updateAvailablePackages, updatedPackages } from "../universal/package.js"
+import { showUpdates } from "../showUpdates.js"
 
 export async function install() {
 	try {
@@ -49,6 +51,9 @@ export async function install() {
 			finalMessage += `, ${downloadStats.fail} failed`
 
 		console.log(finalMessage)
+
+		showUpdates(`Updated packages:`, updatedPackages)
+		showUpdates(`Available package updates:`, updateAvailablePackages)
 
 		debugLog(magenta(`Time passed: ${(Date.now() - startTime) / 1000} seconds`, true))
 	} catch (err) {

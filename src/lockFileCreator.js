@@ -32,6 +32,7 @@ function formatPackage(packageLink, map, fileData) {
 		alias: packageData.alias,
 		environmentOverwrite: packageData.package.environmentOverwrite,
 		dependencies: {},
+		isMainDependency: packageData.package.isMainDependency
 	}
 
 	for (const key in packageData.dependencies) {

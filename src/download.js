@@ -18,7 +18,7 @@ import * as githubRevPackage from "./github-rev/package.js"
  */
 
 /**
- * @param { { package: unversalDependency, tree: any, parentDependencies: any? } } args
+ * @param { { package: unversalDependency, tree: any, parentDependencies: any?, isRoot: boolean? } } args
  */
 export async function deep(args) {
 	if (args.package.type == "wally")
@@ -36,7 +36,7 @@ export async function deep(args) {
 }
 
 /**
- * @param { { package: unversalDependency, tree: any, parentDependencies: any? } } args
+ * @param { { package: unversalDependency, tree: any, parentDependencies: any?, isRoot: boolean? } } args
  */
 export async function dependency(args) {
 	if (args.package.type == "wally")

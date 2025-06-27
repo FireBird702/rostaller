@@ -1,3 +1,5 @@
+import { isEmpty } from "../isEmpty.js"
+
 /**
  * @param { import("../download.js").unversalDependency } dependency
  * @returns { ("wally" | "pesde" | "github" | "github-rev")? }
@@ -56,4 +58,37 @@ export function getFullPackageName(packageData, overwrites) {
 		packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.version) || packageData.version}`
 
 	return packageString
+}
+
+export let updatedPackages = {}
+export let updateAvailablePackages = {}
+
+/**
+ * @param { { fullName: string, oldVersion: string, newVersion: string } } packageData
+ */
+export function registerPackageUpdate(packageData) {
+	if (!updatedPackages[`${packageData.fullName}`])
+		updatedPackages[`${packageData.fullName}`] = {}
+
+	updatedPackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = packageData.newVersion
+
+	if (updateAvailablePackages[`${packageData.fullName}`] && updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`]) {
+		updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = undefined
+
+		if (isEmpty(updateAvailablePackages[`${packageData.fullName}`]))
+			updateAvailablePackages[`${packageData.fullName}`] = undefined
+	}
+}
+
+/**
+ * @param { { fullName: string, oldVersion: string, newVersion: string } } packageData
+ */
+export function registerPackageUpdateAvailable(packageData) {
+	if (updatedPackages[`${packageData.fullName}`] && updatedPackages[`${packageData.fullName}`][`${packageData.oldVersion}`])
+		return
+
+	if (!updateAvailablePackages[`${packageData.fullName}`])
+		updateAvailablePackages[`${packageData.fullName}`] = {}
+
+	updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = packageData.newVersion
 }
