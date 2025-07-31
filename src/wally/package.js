@@ -82,20 +82,24 @@ async function getPackageMetadata(scope, name, index) {
 					["Wally-Version"]: wallyVersion
 				}, "json")
 
-				if (!response || !response.versions)
-					if (registry.fallback_registries) {
-						for (const fallback_registry in registry.fallback_registries) {
-							const versions = await getPackageMetadata(scope, name, fallback_registry)
+				if (response && response.versions) {
+					resolve(response.versions)
+					return
+				}
 
-							if (versions) {
-								resolve(versions)
-								break
-							}
-						}
-					} else
-						resolve(undefined)
+				if (registry.fallback_registries) {
+					for (const fallback_registry in registry.fallback_registries) {
+						const versions = await getPackageMetadata(scope, name, fallback_registry)
 
-				resolve(response.versions)
+						if (!versions)
+							continue
+
+						resolve(versions)
+						return
+					}
+				}
+
+				resolve(undefined)
 			})
 			.catch((reason) => {
 				reject(reason)

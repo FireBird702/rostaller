@@ -83,30 +83,36 @@ async function getPackageMetadata(scope, name, index) {
 					Authorization: auth.pesde != "" && "Bearer " + auth.pesde
 				}, "json")
 
-				if (!response || !response.versions)
-					if (registry.other_registries_allowed) {
-						for (const fallback_registry in registry.other_registries_allowed) {
-							const versions = await getPackageMetadata(scope, name, fallback_registry)
+				if (response && response.versions) {
+					resolve(response.versions)
+					return
+				}
 
-							if (versions) {
-								resolve(versions)
-								break
-							}
-						}
-					} else if (registry.wally_allowed) {
-						console.log("WHY??")
-						for (const fallback_registry in registry.wally_allowed) {
-							const versions = await getPackageMetadata(scope, name, fallback_registry)
+				if (registry.other_registries_allowed) {
+					for (const fallback_registry in registry.other_registries_allowed) {
+						const versions = await getPackageMetadata(scope, name, fallback_registry)
 
-							if (versions) {
-								resolve(versions)
-								break
-							}
-						}
-					} else
-						resolve(undefined)
+						if (!versions)
+							continue
 
-				resolve(response.versions)
+						resolve(versions)
+						return
+					}
+				}
+
+				if (registry.wally_allowed) {
+					for (const fallback_registry in registry.wally_allowed) {
+						const versions = await getPackageMetadata(scope, name, fallback_registry)
+
+						if (!versions)
+							continue
+
+						resolve(versions)
+						return
+					}
+				}
+
+				resolve(undefined)
 			})
 			.catch((reason) => {
 				reject(reason)

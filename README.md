@@ -73,6 +73,8 @@ Manifest files define all necessary information about a package.
 Here is an example package manifest, annotated with comments:
 
 ```toml
+# [package] can be omitted if it is not a package manifest file
+
 [package]
 # Packages belong to a "environment", which helps prevent using code in the wrong context.
 #
@@ -82,11 +84,15 @@ Here is an example package manifest, annotated with comments:
 #
 # In most cases "shared" environment should be used.
 environment = "shared"
+
 # The entry point of the library exported by the package.
-# This file is what will be required when the package is loaded using require.
-lib = "src/init.luau"
+# This file is what will be required when the package is loaded using require().
+lib = "src/lib.luau"
+
 # A list of files that should be synced to Roblox when the package is installed.
 build_files = ["src"]
+
+# If package entry file is "init.lua" or "init.luau", lib and build_files can be omitted
 
 [wally_indexes]
 # List of wally indexes.
