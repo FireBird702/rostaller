@@ -150,6 +150,7 @@ async function resolveRequirement(packageEntry, isRoot) {
 		if (semver.neq(cleanedDefaultVersion, validVersion))
 			registerPackageUpdate({
 				fullName: `${packageEntry.scope}/${packageEntry.name}`,
+				alias: packageEntry.alias,
 				newVersion: validVersion,
 				oldVersion: cleanedDefaultVersion
 			})
@@ -157,6 +158,7 @@ async function resolveRequirement(packageEntry, isRoot) {
 		if (availableVersions.length > 0 && semver.lt(validVersion, availableVersions[0], { loose: true }))
 			registerPackageUpdateAvailable({
 				fullName: `${packageEntry.scope}/${packageEntry.name}`,
+				alias: packageEntry.alias,
 				newVersion: availableVersions[0],
 				oldVersion: validVersion
 			})

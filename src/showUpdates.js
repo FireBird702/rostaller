@@ -12,9 +12,10 @@ export function showUpdates(message, updates) {
         const versions = updates[key]
 
         for (const oldVersion in versions) {
-            const newVersion = versions[oldVersion]
+            const newVersionData = versions[oldVersion]
+            const alias = newVersionData.alias && `(${newVersionData.alias})` || ""
 
-            console.log(` ${green(key)}: ${yellow(oldVersion)} -> ${yellow(newVersion)}`)
+            console.log(` ${alias} ${green(key)}: ${yellow(oldVersion)} -> ${yellow(newVersionData.version)}`)
         }
     }
 }

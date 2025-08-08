@@ -64,13 +64,16 @@ export let updatedPackages = {}
 export let updateAvailablePackages = {}
 
 /**
- * @param { { fullName: string, oldVersion: string, newVersion: string } } packageData
+ * @param { { fullName: string, alias: string?, oldVersion: string, newVersion: string } } packageData
  */
 export function registerPackageUpdate(packageData) {
 	if (!updatedPackages[`${packageData.fullName}`])
 		updatedPackages[`${packageData.fullName}`] = {}
 
-	updatedPackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = packageData.newVersion
+	updatedPackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = {
+		alias: packageData.alias,
+		version: packageData.newVersion
+	}
 
 	if (updateAvailablePackages[`${packageData.fullName}`] && updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`]) {
 		updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = undefined
@@ -81,7 +84,7 @@ export function registerPackageUpdate(packageData) {
 }
 
 /**
- * @param { { fullName: string, oldVersion: string, newVersion: string } } packageData
+ * @param { { fullName: string, alias: string?, oldVersion: string, newVersion: string } } packageData
  */
 export function registerPackageUpdateAvailable(packageData) {
 	if (updatedPackages[`${packageData.fullName}`] && updatedPackages[`${packageData.fullName}`][`${packageData.oldVersion}`])
@@ -90,5 +93,8 @@ export function registerPackageUpdateAvailable(packageData) {
 	if (!updateAvailablePackages[`${packageData.fullName}`])
 		updateAvailablePackages[`${packageData.fullName}`] = {}
 
-	updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = packageData.newVersion
+	updateAvailablePackages[`${packageData.fullName}`][`${packageData.oldVersion}`] = {
+		alias: packageData.alias,
+		version: packageData.newVersion
+	}
 }
