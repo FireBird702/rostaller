@@ -25,6 +25,9 @@ function stringifyInlineTables(data) {
 
 	// loop through each top-level key in data and convert to TOML
 	for (const key in data) {
+		if (typeof data[key] == "undefined")
+			continue
+
 		let value = data[key]
 
 		// add space between top-level sections (keys)
@@ -37,6 +40,9 @@ function stringifyInlineTables(data) {
 			tomlString += `[${key}]\n` // start a new section for this object
 
 			for (const subKey in value) {
+				if (typeof value[subKey] == "undefined")
+					continue
+
 				if (typeof value[subKey] === "object" && !Array.isArray(value[subKey])) {
 					// inline table
 					tomlString += `${subKey} = { `
@@ -44,6 +50,9 @@ function stringifyInlineTables(data) {
 					const subObject = value[subKey]
 
 					for (const prop in subObject) {
+						if (typeof subObject[prop] == "undefined")
+							continue
+
 						tomlString += `${prop} = "${subObject[prop]}", `
 					}
 
@@ -56,6 +65,9 @@ function stringifyInlineTables(data) {
 					const subObject = value[subKey]
 
 					for (const prop in subObject) {
+						if (typeof subObject[prop] == "undefined")
+							continue
+
 						tomlString += `"${subObject[prop]}", `
 					}
 

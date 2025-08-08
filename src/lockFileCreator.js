@@ -4,6 +4,7 @@ import toml from "@iarna/toml"
 import { debugLog } from "./output/output.js"
 import { magenta } from "./output/colors.js"
 import { getFullPackageName } from "./universal/package.js"
+import { isEmpty } from "./isEmpty.js"
 
 function getPackageEntry(packageData) {
 	let packageEntry = {
@@ -42,6 +43,9 @@ function formatPackage(packageLink, map, fileData) {
 			alias: packageData.dependencies[key].alias,
 		}
 	}
+
+	if (isEmpty(fileData[fullName].dependencies))
+		fileData[fullName].dependencies = undefined
 }
 
 export async function generateLockFile(map) {
