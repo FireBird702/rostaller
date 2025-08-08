@@ -1,14 +1,8 @@
-import { defaultFolderNames } from "./mainConfig.js"
-
-export const rootManifestConfig = {
-	sharedPackagesFolder: defaultFolderNames.sharedPackagesFolder,
-	serverPackagesFolder: defaultFolderNames.serverPackagesFolder,
-	devPackagesFolder: defaultFolderNames.devPackagesFolder,
-
+export let rootManifestConfig = {
 	// used for server and dev dependencies and for sourcemap
-	sharedPackages: null,
+	sharedPackages: "game.ReplicatedStorage.sharedPackages",
 	// used for dev dependencies and for sourcemap
-	serverPackages: null,
+	serverPackages: "game.ServerScriptService.serverPackages",
 	// used for sourcemap
-	devPackages: null,
+	devPackages: "game.ReplicatedStorage.devPackages",
 }

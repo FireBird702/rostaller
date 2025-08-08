@@ -38,7 +38,13 @@ Create a new, empty package.
 rostaller init
 ```
 
-Install all packages.
+Install all packages. Currently supported files: `rostaller.toml`, `pesde.toml` and `wally.toml`.
+
+```sh
+rostaller install --migrate
+```
+
+Install all packages and migrate to `rostaller.toml`.
 
 ```sh
 rostaller install
@@ -115,13 +121,13 @@ WallyPackage = { wally = "scope/name", version = "x.x.x" }
 PesdePackage = { pesde = "scope/name", version = "x.x.x" }
 
 # Github release package template.
-# Use only when published releases are available.
+# Use when published releases are available and are semver compatible.
 # Latest tag will be used if [version] is not specified.
 GithubPackage = { github = "owner/name", version = "x.x.x" }
 
 # Github revision package template.
-# Use only when no published releases are available.
-# [rev] can be a branch name or commit hash.
+# Use when no published releases are available or not semver compatible.
+# [rev] can be a branch name, tag or commit hash.
 GithubRevPackage = { github-rev = "owner/name", rev = "main" }
 
 # Versions are SemVer version requirements. The default behavior matches
@@ -144,7 +150,9 @@ TestEZ = { wally = "roblox/testez", version = "0.4.1" }
 
 [place]
 # This is used to specify where packages are located in the Roblox datamodel.
-shared_packages = "game.ReplicatedStorage.Packages"
-server_packages = "game.ServerScriptService.ServerPackages"
-dev_packages = "game.ReplicatedStorage.DevPackages"
+# It should match the .project.json file
+# If not specified, these are the default values
+shared_packages = "game.ReplicatedStorage.sharedPackages"
+server_packages = "game.ServerScriptService.serverPackages"
+dev_packages = "game.ReplicatedStorage.devPackages"
 ```

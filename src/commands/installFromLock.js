@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "fs"
 import { red, green, magenta, yellow, cyan } from "../output/colors.js"
-import { mainPath, downloadStats, lockFileName, manifestFileNames } from "../configs/mainConfig.js"
-import { downloadLockDependencies } from "../universal/manifest.js"
+import { mainPath, downloadStats, lockFileName } from "../configs/mainConfig.js"
+import { downloadLockDependencies, getRootManifest } from "../universal/manifest.js"
 import { createLuauFiles } from "../luauFileCreator.js"
 import { debugLog } from "../output/output.js"
 import { validateToml } from "../validator/validator.js"
@@ -14,9 +14,10 @@ import { showUpdates } from "../showUpdates.js"
 export async function installFromLock() {
 	try {
 		const startTime = Date.now()
+		const manifest = getRootManifest(true)
 
-		if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
-			throw `[${manifestFileNames.rostallerManifest}] does not exist`
+		if (!existsSync(manifest.path))
+			throw `[${manifest.type}] does not exist`
 
 		debugLog(magenta(`Checking ${lockFileName} file ...`, true))
 
@@ -30,9 +31,7 @@ export async function installFromLock() {
 		const lockFileData = validateToml(lockFilePath, readFileSync(lockFilePath))
 
 		debugLog(magenta("Clearing package directories ...", true))
-		await rimraf(packageFolderPaths.get("shared")) // clear previous packages
-		await rimraf(packageFolderPaths.get("server")) // clear previous packages
-		await rimraf(packageFolderPaths.get("dev")) // clear previous packages
+		await rimraf(packageFolderPaths.get("root")) // clear previous packages
 		console.log("Cleared package directories")
 
 		let mapTree = {}

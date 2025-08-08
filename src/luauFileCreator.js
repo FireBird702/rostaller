@@ -168,7 +168,6 @@ function createTempProjectJsonFile(map) {
 
 	for (const key in map) {
 		const packageData = map[key]
-
 		const environment = packageData.package.environment
 
 		if (environment == "shared")
@@ -190,13 +189,13 @@ function createTempProjectJsonFile(map) {
 	}
 
 	if (packageTypes.sharedPackages)
-		createJsonPath(fileData, rootManifestConfig.sharedPackages, rootManifestConfig.sharedPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.sharedPackages, defaultFolderNames.sharedPackagesFolder)
 
 	if (packageTypes.serverPackages)
-		createJsonPath(fileData, rootManifestConfig.serverPackages, rootManifestConfig.serverPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.serverPackages, defaultFolderNames.serverPackagesFolder)
 
 	if (packageTypes.devPackages)
-		createJsonPath(fileData, rootManifestConfig.devPackages, rootManifestConfig.devPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.devPackages, defaultFolderNames.devPackagesFolder)
 
 	writeFileSync(tempFileNames.projectJson, JSON.stringify(fileData, null, "\t"))
 }

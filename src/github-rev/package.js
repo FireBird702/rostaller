@@ -10,6 +10,7 @@ import * as packageFolderPaths from "../packageFolderPaths.js"
 import * as syncConfigGenerator from "../syncConfigGenerator.js"
 import { rimraf } from "rimraf"
 import AdmZip from "adm-zip"
+import { addAlias, addDependencyAlias, addKeyValue, getFullPackageName } from "../universal/package.js"
 
 /**
  * @typedef { object } dependency
@@ -49,48 +50,6 @@ function packageEntryFromDependency(dependency) {
 }
 
 /**
- * @param { * } packageData
- * @param { { rev: string?, ignoreType: boolean? }? } overwrites
- * @returns { string }
- */
-function getFullPackageName(packageData, overwrites) {
-	let packageString = ""
-
-	if (!overwrites || !overwrites.ignoreType)
-		packageString += `${packageData.type}#`
-
-	packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.rev) || packageData.rev}`
-	return packageString
-}
-
-/**
- * @param { string } packageString
- * @param { any } parentDependencies
- * @param { string } alias
- */
-function addDependencyAlias(packageString, parentDependencies, alias) {
-	if (parentDependencies && !parentDependencies[packageString])
-		parentDependencies[packageString] = { alias: alias }
-}
-
-/**
- * @param { string } packageString
- * @param { any } tree
- * @param { any } parentDependencies
- * @param { string } alias
- */
-function addAlias(packageString, tree, parentDependencies, alias) {
-	if (parentDependencies)
-		return
-
-	if (!tree[packageString])
-		tree[packageString] = { dependencies: {} }
-
-	if (tree[packageString] && !tree[packageString].alias)
-		tree[packageString].alias = alias || undefined
-}
-
-/**
  * @param { { package: dependency, tree: any, parentDependencies: any? } } args
  */
 export async function download(args) {
@@ -102,24 +61,22 @@ export async function download(args) {
 		let assetPath = `${packageFolderPaths.get(packageEntry.environmentOverwrite || "shared")}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
 		let assetFolder = assetPath + `@${rev}`
 
+		if (!args.tree[packageString])
+			args.tree[packageString] = { dependencies: {} }
+
 		addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
 		addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
+		addKeyValue(args.tree[packageString], "isMainDependency", args.isRoot)
 
 		if (!existsSync(assetFolder)) {
-			// download rev
-
 			debugLog(`Downloading ${green(packageString)} ...`)
+			mkdirSync(assetFolder, { recursive: true })
 
 			const asset = await getAsync(`https://api.github.com/repos/${packageEntry.scope}/${packageEntry.name}/zipball/${rev}`, {
 				Accept: "application/vnd.github+json",
 				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: xGitHubApiVersion
 			})
-
-			if (existsSync(assetFolder)) {
-				debugLog(`Package ${green(packageString)} already exists`)
-				return
-			}
 
 			if (!asset)
 				throw "Failed to download rev files"
@@ -133,8 +90,6 @@ export async function download(args) {
 			const zip = new AdmZip(assetZip)
 			zip.extractAllTo(path.resolve(assetUnzip), true)
 
-			mkdirSync(assetFolder, { recursive: true })
-
 			let assetFile = assetFolder + `/${packageEntry.name.toLowerCase()}`
 			const dirContent = readdirSync(assetUnzip)
 
@@ -145,16 +100,11 @@ export async function download(args) {
 			await rimraf(assetZip)
 			await rimraf(assetUnzip)
 
-			if (!args.tree[packageString])
-				args.tree[packageString] = { dependencies: {} }
-
-			addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
-
 			args.tree[packageString].package = {
 				scope: packageEntry.scope,
 				name: packageEntry.name,
 				rev: rev,
-				environment: packageEntry.environmentOverwrite,
+				environment: packageEntry.environmentOverwrite, // will be updated later
 				environmentOverwrite: packageEntry.environmentOverwrite,
 				type: packageEntry.type,
 			}

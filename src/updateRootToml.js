@@ -1,20 +1,10 @@
 import { existsSync, writeFileSync } from "fs"
-import { mainPath, manifestFileNames } from "./configs/mainConfig.js"
-import { getManifestData } from "./universal/manifest.js"
+import { getManifestData, getRootManifest } from "./universal/manifest.js"
 import * as semver from "semver"
 import { debugLog } from "./output/output.js"
 import { magenta } from "./output/colors.js"
-
-/**
- * @param { object } x
- */
-function isEmpty(x) {
-	for (const _ in x) {
-		return false
-	}
-
-	return true
-}
+import { isEmpty } from "./isEmpty.js"
+import { manifestFileNames } from "./configs/mainConfig.js"
 
 /**
  * Recursively create TOML strings with inline tables and space between top-level keys
@@ -105,61 +95,191 @@ function sortDictionaryByKey(dependencies) {
 	return newDependencies
 }
 
-export async function updateRootToml(map) {
-	if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
-		throw `[${manifestFileNames.rostallerManifest}] does not exist`
+/**
+ * @param { * } map
+ * @returns
+ */
+async function standard(map) {
+	const manifest = getRootManifest()
 
-	debugLog(magenta(`Updating root ${manifestFileNames.rostallerManifest} file ...`, true))
-
-	const manifest = {
-		type: manifestFileNames.rostallerManifest,
-		path: `${mainPath}/${manifestFileNames.rostallerManifest}`
-	}
+	debugLog(magenta(`Updating ${manifest.type} file ...`, true))
 
 	let rootManifestData = await getManifestData(manifest, true)
 
+	if (manifest.type == manifestFileNames.rostallerManifest) {
+		for (const dependency in map) {
+			if (!map[dependency].isMainDependency)
+				continue
+
+			const alias = map[dependency].alias
+
+			if (!alias)
+				continue
+
+			const packageData = map[dependency].package
+
+			if (packageData.type == "github-rev")
+				continue
+
+			const newVersion = packageData.version
+
+			if (newVersion == "latest")
+				continue
+
+			let dependencies
+
+			if (packageData.environment == "dev")
+				dependencies = rootManifestData.dev_dependencies
+			else if (packageData.environmentOverwrite == "shared")
+				dependencies = rootManifestData.shared_dependencies_overwrite
+			else if (packageData.environmentOverwrite == "server")
+				dependencies = rootManifestData.server_dependencies_overwrite
+			else
+				dependencies = rootManifestData.dependencies
+
+			if (!dependencies[alias])
+				continue
+
+			const oldVersionString = dependencies[alias].version
+
+			if (!oldVersionString)
+				continue
+
+			const oldVersion = semver.clean(oldVersionString, { loose: true }) // ranges (>=1.0.0 < 2.0.0) will return null
+
+			if (!oldVersion || oldVersion == newVersion)
+				continue
+
+			dependencies[alias].version = newVersion
+		}
+	} else if (manifest.type == manifestFileNames.wallyManifest) {
+		for (const dependency in map) {
+			if (!map[dependency].isMainDependency)
+				continue
+
+			const alias = map[dependency].alias
+
+			if (!alias)
+				continue
+
+			const packageData = map[dependency].package
+
+			if (packageData.type == "github-rev")
+				continue
+
+			const newVersion = packageData.version
+
+			if (newVersion == "latest")
+				continue
+
+			let dependencies
+
+			if (packageData.environment == "dev")
+				dependencies = rootManifestData["dev-dependencies"]
+			else if (packageData.environmentOverwrite == "server")
+				dependencies = rootManifestData["server-dependencies"]
+			else
+				dependencies = rootManifestData["dependencies"]
+
+			if (!dependencies[alias])
+				continue
+
+			const oldVersionString = dependencies[alias].split("@")[1]
+
+			if (!oldVersionString)
+				continue
+
+			const oldVersion = semver.clean(oldVersionString, { loose: true }) // ranges (>=1.0.0 < 2.0.0) will return null
+
+			if (!oldVersion || oldVersion == newVersion)
+				continue
+
+			dependencies[alias] = `${packageData.scope}/${packageData.name}@${newVersion}`
+		}
+	}
+
+	return rootManifestData
+}
+
+/**
+ * @param { * } map
+ * @returns
+ */
+function migrate(map) {
+	const rostallerManifest = getRootManifest(true)
+	const manifest = getRootManifest()
+
+	console.log(`Migrating [${manifest.type}] file to [${rostallerManifest.type}]`)
+
+	let rootManifestData = {}
+
 	for (const dependency in map) {
+		if (!map[dependency].isMainDependency)
+			continue
+
 		const alias = map[dependency].alias
-		const packageData = map[dependency].package
 
 		if (!alias)
 			continue
 
+		const packageData = map[dependency].package
+
 		let dependencies
 
-		if (packageData.environment == "dev")
+		if (packageData.environment == "dev") {
+			if (!rootManifestData.dev_dependencies)
+				rootManifestData.dev_dependencies = {}
+
 			dependencies = rootManifestData.dev_dependencies
-		else if (packageData.environmentOverwrite == "shared")
+		} else if (packageData.environmentOverwrite == "shared") {
+			if (!rootManifestData.shared_dependencies_overwrite)
+				rootManifestData.shared_dependencies_overwrite = {}
+
 			dependencies = rootManifestData.shared_dependencies_overwrite
-		else if (packageData.environmentOverwrite == "server")
+		} else if (packageData.environmentOverwrite == "server") {
+			if (!rootManifestData.server_dependencies_overwrite)
+				rootManifestData.server_dependencies_overwrite = {}
+
 			dependencies = rootManifestData.server_dependencies_overwrite
-		else
+		} else {
+			if (!rootManifestData.dependencies)
+				rootManifestData.dependencies = {}
+
 			dependencies = rootManifestData.dependencies
-
-		if (!dependencies[alias])
-			continue
-		if (packageData.type == "github-rev")
-			continue
-
-		const newVersion = packageData.version
-
-		if (newVersion == "latest")
-			continue
-
-		const oldVersionString = dependencies[alias].version
-
-		if (!oldVersionString)
-			continue
-
-		const oldVersion = semver.clean(oldVersionString, { loose: true }) // ranges (>=1.0.0 < 2.0.0) will return null
-
-		if (!oldVersion) {
-			continue
 		}
-		if (oldVersion == newVersion)
-			continue
 
-		dependencies[alias].version = newVersion
+		dependencies[alias] = {
+			[packageData.type]: `${packageData.scope}/${packageData.name}`,
+			version: packageData.version,
+			rev: packageData.rev,
+		}
+	}
+
+	return rootManifestData
+}
+
+/**
+ * @param { * } map
+ * @param { boolean? } isMigrating
+ */
+export async function updateRootToml(map, isMigrating) {
+	const rostallerManifest = getRootManifest(true)
+	const manifest = getRootManifest()
+
+	let isMigrated = false
+	let rootManifestData = {}
+
+	if (isMigrating && manifest.type != rostallerManifest.type) {
+		rootManifestData = migrate(map)
+		isMigrated = true
+	} else {
+		if (manifest.type == manifestFileNames.pesdeManifest) // pesde not supported
+			return
+
+		if (!existsSync(manifest.path))
+			return
+
+		rootManifestData = await standard(map)
 	}
 
 	for (const key in rootManifestData) {
@@ -183,5 +303,14 @@ export async function updateRootToml(map) {
 		rootManifestData.server_dependencies_overwrite = sortDictionaryByKey(rootManifestData.server_dependencies_overwrite)
 	}
 
-	writeFileSync(`${mainPath}/${manifestFileNames.rostallerManifest}`, stringifyInlineTables(rootManifestData))
+	// wally support
+	if (rootManifestData["server-dependencies"]) {
+		rootManifestData["server-dependencies"] = sortDictionaryByKey(rootManifestData["server-dependencies"])
+	}
+
+	if (rootManifestData["dev-dependencies"]) {
+		rootManifestData["dev-dependencies"] = sortDictionaryByKey(rootManifestData["dev-dependencies"])
+	}
+
+	writeFileSync(isMigrated && rostallerManifest.path || manifest.path, stringifyInlineTables(rootManifestData))
 }

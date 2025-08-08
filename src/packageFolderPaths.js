@@ -1,18 +1,19 @@
-import { mainPath } from "./configs/mainConfig.js"
-import { rootManifestConfig } from "./configs/rootManifestConfig.js"
+import { defaultFolderNames, mainPath } from "./configs/mainConfig.js"
 
 /**
- * @param { "shared" | "server" | "dev" } environment
+ * @param { "shared" | "server" | "dev"| "root" } environment
  */
 export function get(environment) {
 	let packagePath = mainPath
 
-	if (environment == "shared")
-		packagePath += `/${rootManifestConfig.sharedPackagesFolder}`
+	if (environment == "root")
+		packagePath += `/${defaultFolderNames.packagesRootFolder}`
+	else if (environment == "shared")
+		packagePath += `/${defaultFolderNames.sharedPackagesFolder}`
 	else if (environment == "server")
-		packagePath += `/${rootManifestConfig.serverPackagesFolder}`
+		packagePath += `/${defaultFolderNames.serverPackagesFolder}`
 	else if (environment == "dev")
-		packagePath += `/${rootManifestConfig.devPackagesFolder}`
+		packagePath += `/${defaultFolderNames.devPackagesFolder}`
 	else
 		throw `Unknown environment: ${environment}`
 

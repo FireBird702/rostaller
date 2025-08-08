@@ -11,7 +11,7 @@ import * as syncConfigGenerator from "../syncConfigGenerator.js"
 import * as semver from "semver"
 import { rimraf } from "rimraf"
 import AdmZip from "adm-zip"
-import { registerPackageUpdate, registerPackageUpdateAvailable } from "../universal/package.js"
+import { addAlias, addDependencyAlias, addKeyValue, getFullPackageName, registerPackageUpdate, registerPackageUpdateAvailable } from "../universal/package.js"
 
 const UTF8 = new TextDecoder("utf-8")
 
@@ -51,21 +51,6 @@ function packageEntryFromDependency(dependency) {
 	}
 
 	return packageEntry
-}
-
-/**
- * @param { * } packageData
- * @param { { version: string?, ignoreType: boolean? }? } overwrites
- * @returns { string }
- */
-function getFullPackageName(packageData, overwrites) {
-	let packageString = ""
-
-	if (!overwrites || !overwrites.ignoreType)
-		packageString += `${packageData.type}#`
-
-	packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.version) || packageData.version}`
-	return packageString
 }
 
 let metadataCache = {}
@@ -144,21 +129,21 @@ async function resolveRequirement(packageEntry, isRoot) {
 		return null
 	}
 
-	const cleanedDefaultVersion = semver.clean(packageEntry.version)
+	const cleanedDefaultVersion = semver.clean(packageEntry.version) || validVersion
 
-	if (isRoot && cleanedDefaultVersion) {
+	if (cleanedDefaultVersion) {
 		if (semver.neq(cleanedDefaultVersion, validVersion))
 			registerPackageUpdate({
 				fullName: `${packageEntry.scope}/${packageEntry.name}`,
-				alias: packageEntry.alias,
+				alias: isRoot && packageEntry.alias || undefined,
 				newVersion: validVersion,
 				oldVersion: cleanedDefaultVersion
 			})
 
-		if (availableVersions.length > 0 && semver.lt(validVersion, availableVersions[0], { loose: true }))
+		if (isRoot && availableVersions.length > 0 && semver.lt(validVersion, availableVersions[0], { loose: true }))
 			registerPackageUpdateAvailable({
 				fullName: `${packageEntry.scope}/${packageEntry.name}`,
-				alias: packageEntry.alias,
+				alias: isRoot && packageEntry.alias || undefined,
 				newVersion: availableVersions[0],
 				oldVersion: validVersion
 			})
@@ -184,74 +169,20 @@ async function getVersionMetadata(scope, name, version) {
 }
 
 /**
- * @param { string } packageString
- * @param { any } parentDependencies
- * @param { string } alias
- */
-function addDependencyAlias(packageString, parentDependencies, alias) {
-	if (parentDependencies && !parentDependencies[packageString])
-		parentDependencies[packageString] = { alias: alias }
-}
-
-/**
- * @param { string } packageString
- * @param { any } tree
- * @param { any } parentDependencies
- * @param { string } alias
- */
-function addAlias(packageString, tree, parentDependencies, alias) {
-	if (parentDependencies)
-		return
-
-	if (!tree[packageString])
-		tree[packageString] = { dependencies: {} }
-
-	if (tree[packageString] && !tree[packageString].alias)
-		tree[packageString].alias = alias || undefined
-}
-
-/**
  * @param { { package: dependency, tree: any, parentDependencies: any?, isRoot: boolean? } } args
  */
 export async function download(args) {
 	try {
-		let packageVersion = "latest"
-		let tag = packageVersion
+		let packageEntry = packageEntryFromDependency(args.package)
 
-		const packageEntry = packageEntryFromDependency(args.package)
+		if (!packageEntry.version || packageEntry.version == "latest") {
+			debugLog(`Getting version for ${green(getFullPackageName(packageEntry))} ...`)
 
-		if (packageEntry.version) {
-			const version = await resolveRequirement(packageEntry, args.isRoot)
-			const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, version)
-
-			packageVersion = (versionMetadata && semver.clean(versionMetadata.tag_name, { loose: true })) || "latest"
-			tag = (versionMetadata && versionMetadata.tag_name) || "latest"
-		}
-
-		let packageString = getFullPackageName(packageEntry, { version: packageVersion })
-		let assetPath = `${packageFolderPaths.get(packageEntry.environmentOverwrite || "shared")}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
-		let assetFolder = assetPath + `@${packageVersion}`
-
-		if (packageVersion != "latest") {
-			addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
-			addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
-		}
-
-		if (!existsSync(assetFolder) || packageVersion == "latest") {
-			// get release info
-
-			debugLog(`Getting version for ${green(packageString)} ...`)
-
-			const release = await getAsync(`https://api.github.com/repos/${packageEntry.scope}/${packageEntry.name}/releases/${tag == "latest" && tag || `tags/${tag}`}`, {
+			const release = await getAsync(`https://api.github.com/repos/${packageEntry.scope}/${packageEntry.name}/releases/latest`, {
 				Accept: "application/vnd.github+json",
 				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: xGitHubApiVersion
 			}, "json")
-
-			if (existsSync(assetFolder)) {
-				debugLog(`Package ${green(packageString)} already exists`)
-				return
-			}
 
 			if (!release)
 				throw "Failed to get release info"
@@ -262,34 +193,35 @@ export async function download(args) {
 			if (!("id" in release))
 				throw "Failed to get release info"
 
-			if (packageVersion == "latest") {
-				packageVersion = semver.clean(release.tag_name, { loose: true }) || packageVersion
-				assetFolder = assetPath + `@${packageVersion}`
+			packageEntry.version = semver.clean(release.tag_name, { loose: true }) || packageEntry.version
 
-				const newPackageString = getFullPackageName(packageEntry, { version: packageVersion })
+			if (!packageEntry.version)
+				throw `"${release.tag_name}" is not a valid github semver version. Try github-rev instead`
+		}
 
-				debugLog(`Updated package version from ${green(packageString)} to ${green(newPackageString)}`)
+		const packageVersion = await resolveRequirement(packageEntry, args.isRoot)
+		const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, packageVersion)
 
-				packageString = newPackageString
-			}
+		let packageString = getFullPackageName(packageEntry, { version: packageVersion })
+		let assetPath = `${packageFolderPaths.get(packageEntry.environmentOverwrite || "shared")}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
+		let assetFolder = assetPath + `@${packageVersion}`
 
-			addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
-			addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
+		if (!args.tree[packageString])
+			args.tree[packageString] = { dependencies: {} }
 
-			// download release repo
+		addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
+		addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
+		addKeyValue(args.tree[packageString], "isMainDependency", args.isRoot)
 
+		if (!existsSync(assetFolder)) {
 			debugLog(`Downloading ${green(packageString)} ...`)
+			mkdirSync(assetFolder, { recursive: true })
 
-			const asset = await getAsync(release.zipball_url, {
+			const asset = await getAsync(`https://api.github.com/repos/${packageEntry.scope}/${packageEntry.name}/zipball/${versionMetadata.tag_name}`, {
 				Accept: "application/vnd.github+json",
 				Authorization: auth.github != "" && "Bearer " + auth.github,
 				["X-GitHub-Api-Version"]: xGitHubApiVersion
 			})
-
-			if (existsSync(assetFolder)) {
-				debugLog(`Package ${green(packageString)} already exists`)
-				return
-			}
 
 			if (UTF8.decode(asset.subarray(0, 2)) != "PK")
 				throw "Failed to download release files"
@@ -303,8 +235,6 @@ export async function download(args) {
 			const zip = new AdmZip(assetZip)
 			zip.extractAllTo(path.resolve(assetUnzip), true)
 
-			mkdirSync(assetFolder, { recursive: true })
-
 			let assetFile = assetFolder + `/${packageEntry.name.toLowerCase()}`
 			const dirContent = readdirSync(assetUnzip)
 
@@ -315,19 +245,13 @@ export async function download(args) {
 			await rimraf(assetZip)
 			await rimraf(assetUnzip)
 
-			if (!args.tree[packageString])
-				args.tree[packageString] = { dependencies: {} }
-
-			addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
-
 			args.tree[packageString].package = {
 				scope: packageEntry.scope,
 				name: packageEntry.name,
 				version: packageVersion,
-				environment: packageEntry.environmentOverwrite,
+				environment: packageEntry.environmentOverwrite, // will be updated later
 				environmentOverwrite: packageEntry.environmentOverwrite,
-				type: packageEntry.type,
-				isMainDependency: args.isRoot
+				type: packageEntry.type
 			}
 
 			// check package data and sub packages

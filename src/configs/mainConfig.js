@@ -23,14 +23,6 @@ export const tempFileNames = {
 	sourcemap: ".temp-rostaller.sourcemap.json",
 }
 
-export const defaultFolderNames = {
-	indexFolder: "_Index",
-
-	sharedPackagesFolder: "Packages",
-	serverPackagesFolder: "ServerPackages",
-	devPackagesFolder: "DevPackages",
-}
-
 const configFileName = "config.toml"
 const authFileName = "auth.toml"
 
@@ -51,6 +43,17 @@ export const auth = {
 	github: "",
 	pesde: "",
 	wally: ""
+}
+
+const packagesRootFolder = "packages"
+
+export const defaultFolderNames = {
+	indexFolder: "_Index",
+
+	packagesRootFolder: packagesRootFolder,
+	sharedPackagesFolder: `${packagesRootFolder}/shared`,
+	serverPackagesFolder: `${packagesRootFolder}/server`,
+	devPackagesFolder: `${packagesRootFolder}/dev`,
 }
 
 export const defaultIndexes = {

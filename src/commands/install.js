@@ -1,7 +1,7 @@
 import { existsSync } from "fs"
 import { red, green, magenta, yellow } from "../output/colors.js"
 import { mainPath, downloadStats, manifestFileNames } from "../configs/mainConfig.js"
-import { downloadManifestDependencies } from "../universal/manifest.js"
+import { downloadManifestDependencies, getRootManifest } from "../universal/manifest.js"
 import { createLuauFiles } from "../luauFileCreator.js"
 import { debugLog } from "../output/output.js"
 import { generateLockFile } from "../lockFileCreator.js"
@@ -11,27 +11,24 @@ import { rimraf } from "rimraf"
 import { updateAvailablePackages, updatedPackages } from "../universal/package.js"
 import { showUpdates } from "../showUpdates.js"
 
-export async function install() {
+/**
+ * @param { boolean? } isMigrating
+ */
+export async function install(isMigrating) {
 	try {
 		const startTime = Date.now()
+		const manifest = getRootManifest()
 
-		if (!existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
-			throw `[${manifestFileNames.rostallerManifest}] does not exist`
+		if (!existsSync(manifest.path))
+			throw `[${manifest.type}] does not exist`
 
 		debugLog(magenta("Clearing package directories ...", true))
-		await rimraf(packageFolderPaths.get("shared")) // clear previous packages
-		await rimraf(packageFolderPaths.get("server")) // clear previous packages
-		await rimraf(packageFolderPaths.get("dev")) // clear previous packages
+		await rimraf(packageFolderPaths.get("root")) // clear previous packages
 		console.log("Cleared package directories")
 
 		let mapTree = {}
 
 		debugLog(magenta("Downloading dependencies from manifest files ...", true))
-
-		const manifest = {
-			type: manifestFileNames.rostallerManifest,
-			path: `${mainPath}/${manifestFileNames.rostallerManifest}`
-		}
 
 		await downloadManifestDependencies(manifest, mapTree, undefined, true)
 		await createLuauFiles(mapTree)
@@ -40,10 +37,10 @@ export async function install() {
 
 		await generateLockFile(mapTree)
 
-		if (downloadStats.fail == 0) {
-			await updateRootToml(mapTree)
-		} else
-			debugLog(magenta(`Some packages failed to update, root ${manifestFileNames.rostallerManifest} file will not be updated ...`, true))
+		if (downloadStats.fail == 0)
+			await updateRootToml(mapTree, isMigrating)
+		else
+			debugLog(magenta(`Some packages failed to update, ${manifestFileNames.rostallerManifest} file will not be ${isMigrating && "created" || "updated"} ...`, true))
 
 		let finalMessage = `[${green("INFO", true)}] Downloaded ${downloadStats.success} packages`
 

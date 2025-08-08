@@ -52,10 +52,19 @@ export function getFullPackageName(packageData, overwrites) {
 	if (!overwrites || !overwrites.ignoreType)
 		packageString += `${packageData.type}#`
 
-	if (packageData.type == "github-rev")
-		packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.rev) || packageData.rev}`
-	else
-		packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.version) || packageData.version}`
+	packageString += `${packageData.scope}/${packageData.name}`
+
+	if (packageData.type == "github-rev") {
+		const rev = (overwrites && overwrites.rev) || packageData.rev
+
+		if (rev)
+			packageString += `@${rev}`
+	} else {
+		const version = (overwrites && overwrites.version) || packageData.version
+
+		if (version)
+			packageString += `@${version}`
+	}
 
 	return packageString
 }
@@ -97,4 +106,39 @@ export function registerPackageUpdateAvailable(packageData) {
 		alias: packageData.alias,
 		version: packageData.newVersion
 	}
+}
+
+/**
+ * @param { string } packageString
+ * @param { any } parentDependencies
+ * @param { string } alias
+ */
+export function addDependencyAlias(packageString, parentDependencies, alias) {
+	if (parentDependencies && !parentDependencies[packageString])
+		parentDependencies[packageString] = { alias: alias }
+}
+
+/**
+ * @param { any } table
+ * @param { string } parentDependencies
+ * @param { any } alias
+ */
+export function addKeyValue(table, key, value) {
+	if (table[key])
+		return
+
+	table[key] = value
+}
+
+/**
+ * @param { string } packageString
+ * @param { any } tree
+ * @param { any } parentDependencies
+ * @param { string } alias
+ */
+export function addAlias(packageString, tree, parentDependencies, alias) {
+	if (parentDependencies)
+		return
+
+	addKeyValue(tree[packageString], "alias", alias)
 }

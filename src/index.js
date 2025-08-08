@@ -68,12 +68,16 @@ yargs(args)
 					describe: "Install all dependencies from the lockfile",
 					type: "boolean",
 				})
+				.option("migrate", {
+					describe: "Migrates from other supported manifest files",
+					type: "boolean",
+				})
 		},
 		async (args) => {
 			if (args.locked)
-				await installFromLock()
+				await installFromLock(args.migrate)
 			else
-				await install()
+				await install(args.migrate)
 		}
 	)
 

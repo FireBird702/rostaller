@@ -1,6 +1,9 @@
+import { manifestFileNames } from "../configs/mainConfig.js"
 import { yellow } from "../output/colors.js"
 import { fileError } from "../output/output.js"
-import { validate as validateRootPackage } from "./rootPackage.js"
+import { validate as validateRostallerRootPackage } from "./rootPackage/rostaller.js"
+import { validate as validateWallyRootPackage } from "./rootPackage/wally.js"
+import { validate as validatePesdeRootPackage } from "./rootPackage/pesde.js"
 import toml from "@iarna/toml"
 
 /**
@@ -31,10 +34,10 @@ export function validateJson(type, localPath, fileRead) {
  *
  * @param { string } localPath
  * @param { string } fileRead
- * @param { boolean? } isRootPackage
+ * @param { { rootType: string }? } rootPackage
  * @returns { object | undefined }
  */
-export function validateToml(localPath, fileRead, isRootPackage) {
+export function validateToml(localPath, fileRead, rootPackage) {
 	let tomlData
 
 	try {
@@ -43,8 +46,16 @@ export function validateToml(localPath, fileRead, isRootPackage) {
 		console.error(fileError(localPath), yellow("Malformed TOML:"), yellow(err))
 	}
 
-	if (isRootPackage)
-		return validateRootPackage(tomlData)
+	if (rootPackage) {
+		if (rootPackage.rootType == manifestFileNames.rostallerManifest)
+			return validateRostallerRootPackage(tomlData)
+		else if (rootPackage.rootType == manifestFileNames.wallyManifest)
+			return validateWallyRootPackage(tomlData)
+		else if (rootPackage.rootType == manifestFileNames.pesdeManifest)
+			return validatePesdeRootPackage(tomlData)
+		else
+			console.error(`[${rootPackage.rootType}] is not a valid manifest type`)
+	}
 
 	return tomlData
 }

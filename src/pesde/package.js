@@ -11,7 +11,7 @@ import * as semver from "semver"
 import { rimraf } from "rimraf"
 import * as syncConfigGenerator from "../syncConfigGenerator.js"
 import { validateJson, validateToml } from "../validator/validator.js"
-import { registerPackageUpdate, registerPackageUpdateAvailable } from "../universal/package.js"
+import { addAlias, addDependencyAlias, addKeyValue, getFullPackageName, registerPackageUpdate, registerPackageUpdateAvailable } from "../universal/package.js"
 
 /**
  * @typedef { object } dependency
@@ -52,21 +52,6 @@ function packageEntryFromDependency(dependency) {
 	}
 
 	return packageEntry
-}
-
-/**
- * @param { * } packageData
- * @param { { version: string?, ignoreType: boolean? }? } overwrites
- * @returns { string }
- */
-function getFullPackageName(packageData, overwrites) {
-	let packageString = ""
-
-	if (!overwrites || !overwrites.ignoreType)
-		packageString += `${packageData.type}#`
-
-	packageString += `${packageData.scope}/${packageData.name}@${(overwrites && overwrites.version) || packageData.version}`
-	return packageString
 }
 
 /**
@@ -198,21 +183,21 @@ async function resolveRequirement(packageEntry, isRoot) {
 		return null
 	}
 
-	const cleanedDefaultVersion = semver.clean(packageEntry.version)
+	const cleanedDefaultVersion = semver.clean(packageEntry.version) || validVersion
 
-	if (isRoot && cleanedDefaultVersion) {
+	if (cleanedDefaultVersion) {
 		if (semver.neq(cleanedDefaultVersion, validVersion))
 			registerPackageUpdate({
 				fullName: `${packageEntry.scope}/${packageEntry.name}`,
-				alias: packageEntry.alias,
+				alias: isRoot && packageEntry.alias || undefined,
 				newVersion: validVersion,
 				oldVersion: cleanedDefaultVersion
 			})
 
-		if (availableVersions.length > 0 && semver.lt(validVersion, availableVersions[0], { loose: true }))
+		if (isRoot && availableVersions.length > 0 && semver.lt(validVersion, availableVersions[0], { loose: true }))
 			registerPackageUpdateAvailable({
 				fullName: `${packageEntry.scope}/${packageEntry.name}`,
-				alias: packageEntry.alias,
+				alias: isRoot && packageEntry.alias || undefined,
 				newVersion: availableVersions[0],
 				oldVersion: validVersion
 			})
@@ -280,33 +265,6 @@ async function getDependencies(versionMetadata, packageTarget) {
 }
 
 /**
- * @param { string } packageString
- * @param { any } parentDependencies
- * @param { string } alias
- */
-function addDependencyAlias(packageString, parentDependencies, alias) {
-	if (parentDependencies && !parentDependencies[packageString])
-		parentDependencies[packageString] = { alias: alias }
-}
-
-/**
- * @param { string } packageString
- * @param { any } tree
- * @param { any } parentDependencies
- * @param { string } alias
- */
-function addAlias(packageString, tree, parentDependencies, alias) {
-	if (parentDependencies)
-		return
-
-	if (!tree[packageString])
-		tree[packageString] = { dependencies: {} }
-
-	if (tree[packageString] && !tree[packageString].alias)
-		tree[packageString].alias = alias || undefined
-}
-
-/**
  * @param { { package: dependency, tree: any, parentDependencies: any?, isRoot: boolean? } } args
  */
 export async function download(args) {
@@ -330,13 +288,16 @@ export async function download(args) {
 
 		let assetFolder = assetPath + `@${packageVersion}`
 
+		if (!args.tree[packageString])
+			args.tree[packageString] = { dependencies: {} }
+
 		addDependencyAlias(packageString, args.parentDependencies, packageEntry.alias)
 		addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
+		addKeyValue(args.tree[packageString], "isMainDependency", args.isRoot)
 
 		if (!existsSync(assetFolder)) {
-			// download release repo
-
 			debugLog(`Downloading ${green(packageString)} ...`)
+			mkdirSync(assetFolder, { recursive: true })
 
 			const registry = await getRegistry(packageEntry.index)
 			const asset = await getAsync(`${registry.api}/v1/packages/${packageEntry.scope}%2F${packageEntry.name}/${packageVersion}/${packageTarget}/archive`, {
@@ -344,15 +305,8 @@ export async function download(args) {
 				Authorization: auth.pesde != "" && "Bearer " + auth.pesde
 			})
 
-			if (existsSync(assetFolder)) {
-				debugLog(`Package ${green(packageString)} already exists`)
-				return
-			}
-
 			if (!asset)
 				throw "Failed to download release files"
-
-			mkdirSync(assetFolder, { recursive: true })
 
 			const assetZip = assetFolder + ".tar.gz"
 			writeFileSync(assetZip, asset)
@@ -362,11 +316,6 @@ export async function download(args) {
 			await extractTarGz(assetZip, path.resolve(assetFile))
 			await rimraf(assetZip)
 
-			if (!args.tree[packageString])
-				args.tree[packageString] = { dependencies: {} }
-
-			addAlias(packageString, args.tree, args.parentDependencies, packageEntry.alias)
-
 			args.tree[packageString].package = {
 				scope: packageEntry.scope,
 				name: packageEntry.name,
@@ -374,8 +323,7 @@ export async function download(args) {
 				environment: environment,
 				environmentOverwrite: packageEntry.environmentOverwrite,
 				type: packageEntry.type,
-				index: packageEntry.index,
-				isMainDependency: args.isRoot
+				index: packageEntry.index
 			}
 
 			// check package data and sub packages

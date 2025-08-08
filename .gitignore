@@ -1,10 +1,10 @@
-/Packages
-/ServerPackages
-/DevPackages
+/packages
 
 /node_modules
 /bin
 /target
 /rostaller*
+/pesde*
+/wally*
 *.node
 /.temp*

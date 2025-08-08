@@ -19,6 +19,29 @@ import { getPackageType } from "./package.js"
  */
 
 /**
+ * @param { boolean? } forceRostallerManifest
+ */
+export function getRootManifest(forceRostallerManifest) {
+	let manifestName = manifestFileNames.rostallerManifest
+
+	if (!forceRostallerManifest) {
+		if (existsSync(`${mainPath}/${manifestFileNames.rostallerManifest}`))
+			manifestName = manifestFileNames.rostallerManifest
+		else if (existsSync(`${mainPath}/${manifestFileNames.pesdeManifest}`))
+			manifestName = manifestFileNames.pesdeManifest
+		else if (existsSync(`${mainPath}/${manifestFileNames.wallyManifest}`))
+			manifestName = manifestFileNames.wallyManifest
+	}
+
+	const manifest = {
+		type: manifestName,
+		path: `${mainPath}/${manifestName}`
+	}
+
+	return manifest
+}
+
+/**
  * @param { manifest } manifest
  * @param { boolean? } isRoot
  */
@@ -28,7 +51,8 @@ export async function getManifestData(manifest, isRoot) {
 
 	debugLog("Loading", cyan(manifest.path))
 
-	const manifestData = validateToml(manifest.path, readFileSync(manifest.path).toString(), isRoot)
+	const rootPackage = isRoot && { rootType: manifest.type } || undefined
+	const manifestData = validateToml(manifest.path, readFileSync(manifest.path).toString(), rootPackage)
 
 	if (!manifestData)
 		throw `[${manifest.path}] is invalid`
@@ -38,25 +62,21 @@ export async function getManifestData(manifest, isRoot) {
 }
 
 /**
- * @param {*} manifestData
+ * @param { manifest } manifest
+ * @param { boolean? } isRoot
  */
-export function setConfigFromRootManifest(manifestData) {
+async function setConfigFromRootManifest(manifest, isRoot) {
 	let allOk = true
 
+	const manifestData = await getManifestData(manifest, isRoot)
+
 	if (manifestData.place) {
-		rootManifestConfig.sharedPackages = manifestData.place.shared_packages
-		rootManifestConfig.serverPackages = manifestData.place.server_packages
-		rootManifestConfig.devPackages = manifestData.place.dev_packages
+		rootManifestConfig.sharedPackages = manifestData.place.shared_packages || rootManifestConfig.sharedPackages
+		rootManifestConfig.serverPackages = manifestData.place.server_packages || rootManifestConfig.serverPackages
+		rootManifestConfig.devPackages = manifestData.place.dev_packages || rootManifestConfig.devPackages
+	}
 
-		if (!manifestData.place.shared_packages)
-			allOk = false
-
-		if (!manifestData.place.server_packages)
-			allOk = false
-
-		if (!manifestData.place.dev_packages)
-			allOk = false
-	} else
+	if (!rootManifestConfig.sharedPackages || !rootManifestConfig.serverPackages || !rootManifestConfig.devPackages)
 		allOk = false
 
 	if (!allOk) {
@@ -67,9 +87,9 @@ export function setConfigFromRootManifest(manifestData) {
 		This typically looks like:
 
 		[place]
-		shared_packages = "game.ReplicatedStorage.Packages"
-		server_packages = "game.ServerScriptService.ServerPackages"
-		dev_packages = "game.ReplicatedStorage.DevPackages"
+		shared_packages = "game.ReplicatedStorage.sharedPackages"
+		server_packages = "game.ServerScriptService.serverPackages"
+		dev_packages = "game.ReplicatedStorage.devPackages"
 		`).replace(/\t/g, ""))
 
 		process.exit(1)
@@ -132,8 +152,7 @@ export async function getManifestDependencies(manifest, isRoot) {
  */
 export async function downloadManifestDependencies(manifest, tree, parentDependencies, isRoot) {
 	if (isRoot) {
-		const manifestData = await getManifestData(manifest, isRoot)
-		setConfigFromRootManifest(manifestData)
+		await setConfigFromRootManifest(manifest, isRoot)
 	}
 
 	const allDependencies = await getManifestDependencies(manifest, isRoot)
@@ -147,14 +166,8 @@ export async function downloadManifestDependencies(manifest, tree, parentDepende
 export async function downloadLockDependencies(lockFileData, tree) {
 	debugLog(magenta(`Downloading dependencies from ${lockFileName} file ...`, true))
 
-	const manifest = {
-		type: manifestFileNames.rostallerManifest,
-		path: `${mainPath}/${manifestFileNames.rostallerManifest}`
-	}
-
-	const manifestData = await getManifestData(manifest, true)
-
-	setConfigFromRootManifest(manifestData)
+	const manifest = getRootManifest(true)
+	await setConfigFromRootManifest(manifest, true)
 
 	const queue = new Queue(config.maxConcurrentDownloads)
 	const promises = []
