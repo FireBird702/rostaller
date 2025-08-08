@@ -2,6 +2,7 @@ import path from "path"
 import { green } from "../output/colors.js"
 import { debugLog } from "../output/output.js"
 import { getManifestData } from "../universal/manifest.js"
+import { defaultIndexes } from "../configs/mainConfig.js"
 
 /**
  * @param { manifest } manifest
@@ -27,7 +28,7 @@ export async function get(manifest) {
 			name: name,
 			version: version,
 			alias: alias,
-			index: manifestData.package.registry,
+			index: (manifestData.package && manifestData.package.registry) || defaultIndexes.wally,
 			type: "wally",
 			environmentOverwrite: environmentOverwrite
 		})

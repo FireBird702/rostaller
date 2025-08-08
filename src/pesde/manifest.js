@@ -3,6 +3,7 @@ import { green } from "../output/colors.js"
 import { debugLog } from "../output/output.js"
 import { getPackageType } from "../universal/package.js"
 import { getManifestData } from "../universal/manifest.js"
+import { defaultIndexes } from "../configs/mainConfig.js"
 
 /**
  * @param { manifest } manifest
@@ -15,10 +16,10 @@ export async function get(manifest, isRoot) {
 	const manifestData = await getManifestData(manifest, isRoot)
 	const registryIndexes = {
 		wally: manifestData.wally_indices || {
-			default: "https://github.com/UpliftGames/wally-index"
+			default: defaultIndexes.wally
 		},
 		pesde: manifestData.indices || {
-			default: "https://github.com/pesde-pkg/index"
+			default: defaultIndexes.pesde
 		}
 	}
 

@@ -53,6 +53,11 @@ export const auth = {
 	wally: ""
 }
 
+export const defaultIndexes = {
+	wally: "https://github.com/UpliftGames/wally-index",
+	pesde: "https://github.com/pesde-pkg/index",
+}
+
 function reconcileAndSave(path, data) {
 	if (existsSync(path)) {
 		try {
