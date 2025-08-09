@@ -41,13 +41,13 @@ rostaller init
 Install all packages. Currently supported files: `rostaller.toml`, `pesde.toml` and `wally.toml`.
 
 ```sh
-rostaller install --migrate
+rostaller install
 ```
 
-Install all packages and migrate to `rostaller.toml`.
+Install all packages and performs migration to `rostaller.toml`.
 
 ```sh
-rostaller install
+rostaller install --migrate
 ```
 
 Install all packages from lockfile.
