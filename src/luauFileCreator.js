@@ -189,13 +189,13 @@ function createTempProjectJsonFile(map) {
 	}
 
 	if (packageTypes.sharedPackages)
-		createJsonPath(fileData, rootManifestConfig.sharedPackages, defaultFolderNames.sharedPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.sharedPackages, rootManifestConfig.useWallyFolderStructure && defaultFolderNames.wallySharedPackagesFolder || defaultFolderNames.sharedPackagesFolder)
 
 	if (packageTypes.serverPackages)
-		createJsonPath(fileData, rootManifestConfig.serverPackages, defaultFolderNames.serverPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.serverPackages, rootManifestConfig.useWallyFolderStructure && defaultFolderNames.wallyServerPackagesFolder || defaultFolderNames.serverPackagesFolder)
 
 	if (packageTypes.devPackages)
-		createJsonPath(fileData, rootManifestConfig.devPackages, defaultFolderNames.devPackagesFolder)
+		createJsonPath(fileData, rootManifestConfig.devPackages, rootManifestConfig.useWallyFolderStructure && defaultFolderNames.wallyDevPackagesFolder || defaultFolderNames.devPackagesFolder)
 
 	writeFileSync(tempFileNames.projectJson, JSON.stringify(fileData, null, "\t"))
 }

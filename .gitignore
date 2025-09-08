@@ -1,4 +1,7 @@
 /packages
+/Packages
+/ServerPackages
+/DevPackages
 
 /node_modules
 /bin

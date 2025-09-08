@@ -3,11 +3,12 @@ import { red, green, magenta, cyan, yellow } from "../output/colors.js"
 import { mainPath } from "../configs/mainConfig.js"
 import { debugLog } from "../output/output.js"
 import { getRootManifest } from "../universal/manifest.js"
+import { defaultRootManifestConfig } from "../configs/rootManifestConfig.js"
 
 export async function init() {
-	try {
-		const manifest = getRootManifest(true)
+	const manifest = getRootManifest(true)
 
+	try {
 		if (existsSync(manifest.path)) {
 			console.log(`[${green("INFO", true)}] File ${cyan(manifest.type)} already exists in ${cyan(mainPath)}`)
 			return
@@ -22,9 +23,9 @@ export async function init() {
 		[dev_dependencies]
 
 		[place]
-		shared_packages = "game.ReplicatedStorage.sharedPackages"
-		server_packages = "game.ServerScriptService.serverPackages"
-		dev_packages = "game.ReplicatedStorage.devPackages"
+		shared_packages = "${defaultRootManifestConfig.sharedPackages}"
+		server_packages = "${defaultRootManifestConfig.serverPackages}"
+		dev_packages = "${defaultRootManifestConfig.devPackages}"
 		`.replace(/\t/g, "").slice(1)
 
 		debugLog(magenta(`Creating ${manifest.type} file ...`, true))

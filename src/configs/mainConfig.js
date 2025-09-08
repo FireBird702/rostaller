@@ -42,7 +42,7 @@ export const config = {
 export const auth = {
 	github: "",
 	pesde: "",
-	wally: ""
+	wally: "",
 }
 
 const packagesRootFolder = "packages"
@@ -54,6 +54,10 @@ export const defaultFolderNames = {
 	sharedPackagesFolder: `${packagesRootFolder}/shared`,
 	serverPackagesFolder: `${packagesRootFolder}/server`,
 	devPackagesFolder: `${packagesRootFolder}/dev`,
+
+	wallySharedPackagesFolder: `Packages`,
+	wallyServerPackagesFolder: `ServerPackages`,
+	wallyDevPackagesFolder: `DevPackages`,
 }
 
 export const defaultIndexes = {

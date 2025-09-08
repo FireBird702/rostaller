@@ -23,14 +23,21 @@ export async function install(isMigrating) {
 			throw `[${manifest.type}] does not exist`
 
 		debugLog(magenta("Clearing package directories ...", true))
-		await rimraf(packageFolderPaths.get("root")) // clear previous packages
+
+		await rimraf(packageFolderPaths.get("root"))
+
+		// wally folder structure
+		await rimraf(packageFolderPaths.get("shared", true))
+		await rimraf(packageFolderPaths.get("server", true))
+		await rimraf(packageFolderPaths.get("dev", true))
+
 		console.log("Cleared package directories")
 
 		let mapTree = {}
 
 		debugLog(magenta("Downloading dependencies from manifest files ...", true))
 
-		await downloadManifestDependencies(manifest, mapTree, undefined, true)
+		await downloadManifestDependencies(manifest, mapTree, undefined, true, isMigrating)
 		await createLuauFiles(mapTree)
 
 		process.chdir(mainPath)

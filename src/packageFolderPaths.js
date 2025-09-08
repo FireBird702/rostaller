@@ -2,18 +2,19 @@ import { defaultFolderNames, mainPath } from "./configs/mainConfig.js"
 
 /**
  * @param { "shared" | "server" | "dev"| "root" } environment
+ * @param { boolean? } useWallyFolderStructure
  */
-export function get(environment) {
+export function get(environment, useWallyFolderStructure) {
 	let packagePath = mainPath
 
 	if (environment == "root")
 		packagePath += `/${defaultFolderNames.packagesRootFolder}`
 	else if (environment == "shared")
-		packagePath += `/${defaultFolderNames.sharedPackagesFolder}`
+		packagePath += (useWallyFolderStructure || rootManifestConfig.useWallyFolderStructure) && `/${defaultFolderNames.wallySharedPackagesFolder}` || `/${defaultFolderNames.sharedPackagesFolder}`
 	else if (environment == "server")
-		packagePath += `/${defaultFolderNames.serverPackagesFolder}`
+		packagePath += (useWallyFolderStructure || rootManifestConfig.useWallyFolderStructure) && `/${defaultFolderNames.wallyServerPackagesFolder}` || `/${defaultFolderNames.serverPackagesFolder}`
 	else if (environment == "dev")
-		packagePath += `/${defaultFolderNames.devPackagesFolder}`
+		packagePath += (useWallyFolderStructure || rootManifestConfig.useWallyFolderStructure) && `/${defaultFolderNames.wallyDevPackagesFolder}` || `/${defaultFolderNames.devPackagesFolder}`
 	else
 		throw `Unknown environment: ${environment}`
 

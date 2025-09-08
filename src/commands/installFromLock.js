@@ -31,7 +31,14 @@ export async function installFromLock() {
 		const lockFileData = validateToml(lockFilePath, readFileSync(lockFilePath))
 
 		debugLog(magenta("Clearing package directories ...", true))
-		await rimraf(packageFolderPaths.get("root")) // clear previous packages
+
+		await rimraf(packageFolderPaths.get("root"))
+
+		// wally folder structure
+		await rimraf(packageFolderPaths.get("shared", true))
+		await rimraf(packageFolderPaths.get("server", true))
+		await rimraf(packageFolderPaths.get("dev", true))
+
 		console.log("Cleared package directories")
 
 		let mapTree = {}

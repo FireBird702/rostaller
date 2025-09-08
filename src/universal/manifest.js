@@ -1,6 +1,6 @@
 import path from "path"
 import { existsSync, readFileSync } from "fs"
-import { rootManifestConfig } from "../configs/rootManifestConfig.js"
+import { defaultRootManifestConfig, rootManifestConfig } from "../configs/rootManifestConfig.js"
 import { config, lockFileName, mainPath, manifestFileNames } from "../configs/mainConfig.js"
 import { validateToml } from "../validator/validator.js"
 import { cyan, magenta, yellow } from "../output/colors.js"
@@ -63,35 +63,54 @@ export async function getManifestData(manifest, isRoot) {
 
 /**
  * @param { manifest } manifest
- * @param { boolean? } isRoot
+ * @param { boolean } ignoreWallyFolderStructure
  */
-async function setConfigFromRootManifest(manifest, isRoot) {
+async function setConfigFromRootManifest(manifest, ignoreWallyFolderStructure) {
 	let allOk = true
 
-	const manifestData = await getManifestData(manifest, isRoot)
+	const manifestData = await getManifestData(manifest, true)
+
+	if (manifest.type == manifestFileNames.wallyManifest)
+		rootManifestConfig.useWallyFolderStructure = !ignoreWallyFolderStructure && true || rootManifestConfig.useWallyFolderStructure
 
 	if (manifestData.place) {
-		rootManifestConfig.sharedPackages = manifestData.place.shared_packages || rootManifestConfig.sharedPackages
-		rootManifestConfig.serverPackages = manifestData.place.server_packages || rootManifestConfig.serverPackages
-		rootManifestConfig.devPackages = manifestData.place.dev_packages || rootManifestConfig.devPackages
+		rootManifestConfig.sharedPackages = (rootManifestConfig.useWallyFolderStructure && (manifestData.place["shared-packages"] || defaultRootManifestConfig.wallySharedPackages) || (manifestData.place.shared_packages || defaultRootManifestConfig.sharedPackages))
+		rootManifestConfig.serverPackages = (rootManifestConfig.useWallyFolderStructure && (manifestData.place["server-packages"] || defaultRootManifestConfig.wallyServerPackages) || (manifestData.place.server_packages || defaultRootManifestConfig.serverPackages))
+		rootManifestConfig.devPackages = (rootManifestConfig.useWallyFolderStructure && (manifestData.place["dev-packages"] || defaultRootManifestConfig.wallyDevPackages) || (manifestData.place.dev_packages || defaultRootManifestConfig.devPackages))
 	}
 
 	if (!rootManifestConfig.sharedPackages || !rootManifestConfig.serverPackages || !rootManifestConfig.devPackages)
 		allOk = false
 
 	if (!allOk) {
-		console.error(yellow(`
-		To link packages correctly you must declare where each
-		packages are placed in the Roblox DataModel.
+		let message
 
-		This typically looks like:
+		if (manifest.type == manifestFileNames.wallyManifest && rootManifestConfig.useWallyFolderStructure)
+			message = `
+			To link packages correctly you must declare where each
+			packages are placed in the Roblox DataModel.
 
-		[place]
-		shared_packages = "game.ReplicatedStorage.sharedPackages"
-		server_packages = "game.ServerScriptService.serverPackages"
-		dev_packages = "game.ReplicatedStorage.devPackages"
-		`).replace(/\t/g, ""))
+			This typically looks like:
 
+			[place]
+			shared-packages = "${defaultRootManifestConfig.wallySharedPackages}"
+			server-packages = "${defaultRootManifestConfig.wallyServerPackages}"
+			dev-packages = "${defaultRootManifestConfig.wallyDevPackages}"
+			`
+		else
+			message = `
+			To link packages correctly you must declare where each
+			packages are placed in the Roblox DataModel.
+
+			This typically looks like:
+
+			[place]
+			shared_packages = "${defaultRootManifestConfig.sharedPackages}"
+			server_packages = "${defaultRootManifestConfig.serverPackages}"
+			dev_packages = "${defaultRootManifestConfig.devPackages}"
+			`
+
+		console.error(yellow(message).replace(/\t/g, ""))
 		process.exit(1)
 	}
 }
@@ -149,10 +168,11 @@ export async function getManifestDependencies(manifest, isRoot) {
  * @param { * } tree
  * @param { * } parentDependencies
  * @param { boolean? } isRoot
+ * @param { boolean? } isMigrating
  */
-export async function downloadManifestDependencies(manifest, tree, parentDependencies, isRoot) {
+export async function downloadManifestDependencies(manifest, tree, parentDependencies, isRoot, isMigrating) {
 	if (isRoot) {
-		await setConfigFromRootManifest(manifest, isRoot)
+		await setConfigFromRootManifest(manifest, isMigrating)
 	}
 
 	const allDependencies = await getManifestDependencies(manifest, isRoot)
