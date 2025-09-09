@@ -5,13 +5,14 @@ import { getManifestData } from "../universal/manifest.js"
 import { defaultIndexes } from "../configs/mainConfig.js"
 
 /**
- * @param { manifest } manifest
+ * @param { import("../universal/manifest.js").manifest } manifest
+ * @param { boolean? } isRoot
  * @returns { Promise<import("../download.js").unversalDependency[]> }
  */
-export async function get(manifest) {
+export async function get(manifest, isRoot) {
 	debugLog("Mapping", green(path.parse(process.cwd()).name))
 
-	const manifestData = await getManifestData(manifest)
+	const manifestData = await getManifestData(manifest, isRoot)
 
 	let allDependencies = []
 
@@ -47,6 +48,16 @@ export async function get(manifest) {
 	if (serverDependencies) {
 		for (const alias in serverDependencies) {
 			addDependency(alias, serverDependencies[alias], "server")
+		}
+	}
+
+	if (isRoot) {
+		const devDependencies = manifestData["dev-dependencies"]
+
+		if (devDependencies) {
+			for (const alias in devDependencies) {
+				addDependency(alias, devDependencies[alias], "dev")
+			}
 		}
 	}
 

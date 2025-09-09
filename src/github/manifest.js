@@ -6,7 +6,7 @@ import { getManifestData } from "../universal/manifest.js"
 import { defaultIndexes } from "../configs/mainConfig.js"
 
 /**
- * @param { manifest } manifest
+ * @param { import("../universal/manifest.js").manifest } manifest
  * @param { boolean? } isRoot
  * @returns { Promise<import("../download.js").unversalDependency[]> }
  */

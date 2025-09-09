@@ -6,7 +6,7 @@ import { getManifestData } from "../universal/manifest.js"
 import { defaultIndexes } from "../configs/mainConfig.js"
 
 /**
- * @param { manifest } manifest
+ * @param { import("../universal/manifest.js").manifest } manifest
  * @param { boolean? } isRoot
  * @returns { Promise<import("../download.js").unversalDependency[]> }
  */
@@ -66,6 +66,16 @@ export async function get(manifest, isRoot) {
 	if (peerDependencies) {
 		for (const alias in peerDependencies) {
 			addDependency(alias, peerDependencies[alias])
+		}
+	}
+
+	if (isRoot) {
+		const devDependencies = manifestData.dev_dependencies
+
+		if (devDependencies) {
+			for (const alias in devDependencies) {
+				addDependency(alias, devDependencies[alias], "dev")
+			}
 		}
 	}
 

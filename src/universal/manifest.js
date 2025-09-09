@@ -154,9 +154,9 @@ export async function getManifestDependencies(manifest, isRoot) {
 	if (manifest.type == manifestFileNames.rostallerManifest)
 		allDependencies = await githubManifest.get(manifest, isRoot)
 	else if (manifest.type == manifestFileNames.pesdeManifest)
-		allDependencies = await pesdeManifest.get(manifest)
+		allDependencies = await pesdeManifest.get(manifest, isRoot)
 	else if (manifest.type == manifestFileNames.wallyManifest)
-		allDependencies = await wallyManifest.get(manifest)
+		allDependencies = await wallyManifest.get(manifest, isRoot)
 	else
 		throw `[${manifest.path}] is not a correct manifest file`
 
