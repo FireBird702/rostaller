@@ -1,4 +1,5 @@
 import { defaultFolderNames, mainPath } from "./configs/mainConfig.js"
+import { rootManifestConfig } from "./configs/rootManifestConfig.js"
 
 /**
  * @param { "shared" | "server" | "dev"| "root" } environment
