@@ -44,7 +44,7 @@ Install all packages. Currently supported files: `rostaller.toml`, `pesde.toml` 
 rostaller install
 ```
 
-Install all packages and performs migration to `rostaller.toml`.
+Install all packages and performs migration from `wally.toml` to `rostaller.toml`.
 
 ```sh
 rostaller install --migrate
