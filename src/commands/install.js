@@ -38,26 +38,26 @@ export async function install(isMigrating) {
 		debugLog(magenta("Downloading dependencies from manifest files ...", true))
 
 		await downloadManifestDependencies(manifest, mapTree, undefined, true, isMigrating)
-		await createLuauFiles(mapTree)
 
-		process.chdir(mainPath)
-
-		await generateLockFile(mapTree)
-
-		if (downloadStats.fail == 0)
+		if (downloadStats.fail == 0) {
+			await createLuauFiles(mapTree)
+			process.chdir(mainPath)
+			await generateLockFile(mapTree)
 			await updateRootToml(mapTree, isMigrating)
-		else
+		} else
 			debugLog(magenta(`Some packages failed to update, ${manifestFileNames.rostallerManifest} file will not be ${isMigrating && "created" || "updated"} ...`, true))
 
 		let finalMessage = `[${green("INFO", true)}] Downloaded ${downloadStats.success} packages`
 
 		if (downloadStats.fail != 0)
-			finalMessage += `, ${downloadStats.fail} failed`
+			finalMessage += `, ${downloadStats.fail} failed. Make sure that every package is correct and try again`
 
 		console.log(finalMessage)
 
-		showUpdates(`Updated packages:`, updatedPackages)
-		showUpdates(`Available package updates:`, updateAvailablePackages)
+		if (downloadStats.fail == 0) {
+			showUpdates(`Updated packages:`, updatedPackages)
+			showUpdates(`Available package updates:`, updateAvailablePackages)
+		}
 
 		debugLog(magenta(`Time passed: ${(Date.now() - startTime) / 1000} seconds`, true))
 	} catch (err) {

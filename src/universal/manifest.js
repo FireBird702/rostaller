@@ -1,11 +1,10 @@
 import path from "path"
 import { existsSync, readFileSync } from "fs"
 import { defaultRootManifestConfig, rootManifestConfig } from "../configs/rootManifestConfig.js"
-import { config, lockFileName, mainPath, manifestFileNames } from "../configs/mainConfig.js"
+import { lockFileName, mainPath, manifestFileNames } from "../configs/mainConfig.js"
 import { validateToml } from "../validator/validator.js"
 import { cyan, magenta, yellow } from "../output/colors.js"
 import { debugLog } from "../output/output.js"
-import { Queue } from "async-await-queue"
 import * as download from "../download.js"
 import * as githubManifest from "../github/manifest.js"
 import * as pesdeManifest from "../pesde/manifest.js"
@@ -122,23 +121,15 @@ async function setConfigFromRootManifest(manifest, ignoreWallyFolderStructure) {
  * @param { boolean? } isRoot
  */
 export async function downloadDeepDependencies(dependencies, tree, parentDependencies, isRoot) {
-	const queue = new Queue(config.maxConcurrentDownloads)
 	const promises = []
 
-	/**
-	 * @param { import("../download.js").unversalDependency } dependency
-	 */
-	function queueDependency(dependency) {
-		promises.push(queue.run(() => download.deep({
+	for (const dependency of dependencies) {
+		promises.push(download.deep({
 			package: dependency,
 			parentDependencies: parentDependencies,
 			tree: tree,
 			isRoot: isRoot
-		}).catch((err) => console.error(err))))
-	}
-
-	for (const dependency of dependencies) {
-		queueDependency(dependency)
+		}).catch((err) => console.error(err)))
 	}
 
 	return Promise.all(promises)
@@ -189,7 +180,6 @@ export async function downloadLockDependencies(lockFileData, tree) {
 	const manifest = getRootManifest(true)
 	await setConfigFromRootManifest(manifest, true)
 
-	const queue = new Queue(config.maxConcurrentDownloads)
 	const promises = []
 
 	for (const packageLink in lockFileData) {
@@ -199,12 +189,12 @@ export async function downloadLockDependencies(lockFileData, tree) {
 		dependency.name = dependency[packageType]
 		dependency.type = packageType
 
-		promises.push(queue.run(() => download.dependency({
+		promises.push(download.dependency({
 			package: dependency,
 			parentDependencies: undefined,
 			tree: tree,
 			isRoot: dependency.isMainDependency
-		}).catch((err) => console.error(err))))
+		}).catch((err) => console.error(err)))
 	}
 
 	return Promise.all(promises)

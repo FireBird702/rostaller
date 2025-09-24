@@ -202,6 +202,9 @@ export async function download(args) {
 		const packageVersion = await resolveRequirement(packageEntry, args.isRoot)
 		const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, packageVersion)
 
+		if (!packageVersion || !versionMetadata)
+			throw `Invalid version`
+
 		let packageString = getFullPackageName(packageEntry, { version: packageVersion })
 		let assetPath = `${packageFolderPaths.get(packageEntry.environmentOverwrite || "shared")}/${defaultFolderNames.indexFolder}/${packageEntry.scope.toLowerCase()}_${packageEntry.name.toLowerCase()}`
 		let assetFolder = assetPath + `@${packageVersion}`

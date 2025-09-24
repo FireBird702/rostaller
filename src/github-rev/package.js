@@ -81,6 +81,9 @@ export async function download(args) {
 			if (!asset)
 				throw "Failed to download rev files"
 
+			if (asset.toString().match("404: Not Found") || asset.toString().match("Not Found"))
+				throw `Invalid rev`
+
 			const assetUnzip = assetFolder + "-unzipped"
 			mkdirSync(assetUnzip, { recursive: true })
 

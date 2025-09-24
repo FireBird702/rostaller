@@ -1,13 +1,21 @@
 import followRedirects from "follow-redirects"
+import PQueue from "p-queue"
+import promiseRetry from "promise-retry"
+import { config } from "./configs/mainConfig.js"
+
+const queue = new PQueue({
+	autoStart: true,
+	concurrency: config.maxConcurrentDownloads
+})
 
 /**
  * @param { string } url
  * @param { * } headers
  * @param { "json"? } responseType
- * @returns { object | Buffer<ArrayBuffer> }
+ * @returns { Promise<object | Buffer<ArrayBuffer>> }
  */
 
-export async function getAsync(url, headers, responseType) {
+function get(url, headers, responseType) {
 	const newHeaders = { "user-agent": "node.js" }
 
 	for (const header in headers) {
@@ -46,5 +54,24 @@ export async function getAsync(url, headers, responseType) {
 		})
 
 		request.end()
+	})
+}
+
+/**
+ * @param { string } url
+ * @param { * } headers
+ * @param { "json"? } responseType
+ * @returns
+ */
+
+export async function getAsync(url, headers, responseType) {
+	return await queue.add(function () {
+		return promiseRetry(async (retry) => {
+			try {
+				return await get(url, headers, responseType)
+			} catch (err) {
+				retry(err)
+			}
+		})
 	})
 }

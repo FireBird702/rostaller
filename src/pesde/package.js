@@ -274,6 +274,9 @@ export async function download(args) {
 		const packageString = getFullPackageName(packageEntry, { version: packageVersion })
 		const versionMetadata = await getVersionMetadata(packageEntry.scope, packageEntry.name, packageVersion, packageEntry.index)
 
+		if (!packageVersion || !versionMetadata)
+			throw `Invalid version`
+
 		let packageTarget
 
 		if (versionMetadata.targets.roblox_server)
