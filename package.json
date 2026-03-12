@@ -7,7 +7,9 @@
 		"build": "npm run cargo-build -- --verbose --locked --release --all-features",
 		"run-esbuild": "esbuild --platform=node --bundle --loader:.node=copy --format=cjs --define:import.meta.url=_importMetaUrl \"--banner:js=const _importMetaUrl = require('url').pathToFileURL(__filename)\" --outfile=rostaller.cjs ./src/index.js",
 		"run-pkg-win": "pkg --no-bytecode --public --targets latest-win --public-packages '*' --out-path bin ./rostaller.cjs",
-		"test-win-build": "npm run build && npm run run-esbuild && npm run run-pkg-win"
+		"test-win-build": "npm run build && npm run run-esbuild && npm run run-pkg-win",
+		"run-pkg-lin": "pkg --no-bytecode --public --targets latest-linux --public-packages '*' --out-path bin ./rostaller.cjs",
+		"test-lin-build": "npm run build && npm run run-esbuild && npm run run-pkg-lin"
 	},
 	"dependencies": {
 		"@iarna/toml": "^2.0.0",
